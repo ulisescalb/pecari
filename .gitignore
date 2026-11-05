@@ -1,3 +1,8 @@
 *.blend1
 __pycache__/
 *.pyc
+renders/vprobe*/
+blend/pecari_vprobe*
+renders/vtest*/
+blend/pecari_vtest*
+renders/*/mesh_arrays.npz

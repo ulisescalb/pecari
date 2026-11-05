@@ -421,3 +421,30 @@ para que se pueda juzgar.
   modelo no puede pasar de ≈0,52–0,54 m, frente a ≈0,55–0,60 m que pide la foto a esa escala.
   Llegar a IoU lateral ≥ 0,90 puede ser incompatible con las medidas bibliográficas. El
   optimizador dirá cuánto se puede acercar dentro de la caja permitida.
+
+## Paso 2 — Landmarks y pata trasera
+
+- `params.json → skeleton`: centros óseos del lado izquierdo.
+  - Pata delantera: escápula, hombro, codo, olécranon, carpo, menudillo, corona y pezuña (talón,
+    punta, suela).
+  - Pata trasera: cadera, babilla, corvejón, calcáneo, menudillo, corona y pezuña.
+  - Columna: cuello, cruz, lomo, grupa y base de la cola.
+- Las patas se definen por articulaciones con nombre (`legs.*.segments`, `ellipsoids`, `cage`),
+  y el anillo raíz de la jaula se elige solo.
+- **Pata trasera corregida primero**, con el esquema de ungulado:
+  - fémur adelante-abajo (+23° desde la vertical);
+  - tibia atrás-abajo (−60°);
+  - metatarso casi vertical (+8°);
+  - pezuña bajo la cadera (2 cm detrás).
+- `build_pecari.py` comprueba este zigzag en cada build (`leg_scheme_check`) y lo deja en
+  `export/landmarks.json` (56 puntos + lista de huesos padre→hijo para el rig, en el marco final
+  del asset: occipucio, órbitas, punta del disco, bisagras mandibulares, mentón, raíces de
+  orejas, articulaciones L/R y columna).
+- Para que la malla siga la pata trasera real hubo que cambiar la **jaula**:
+  - La pierna se ve ancha de perfil (babilla delante, isquiotibiales detrás, ~7 cm en la foto).
+    El tubo estrecho que nacía de una sola cara bajo el vientre dejaba el puente
+    babilla–corva–calcáneo sin vértices (gráfico de campo frente a malla).
+  - Ahora la cara raíz trasera abarca 11 cm del cuerpo (anillos y = 0,18…0,29), el primer anillo
+    de la pata mide 9,6 cm de delante atrás y el del corvejón cubre el calcáneo.
+- Estos cambios se probaron con builds sin render (`vprobe`, ~9 s) y con la IoU de silueta. No
+  cuentan como iteraciones de render; quedan anotados aquí.

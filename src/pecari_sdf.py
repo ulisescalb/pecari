@@ -464,3 +464,44 @@ def to_world(Pc, R, T):
 def to_can(Pw, R, T):
     return (np.asarray(Pw) - T) @ R
 
+
+
+# ----------------------------------------------------------------------------
+# Esqueleto: patas definidas por articulaciones con nombre
+# ----------------------------------------------------------------------------
+def skel_point(P, ref):
+    """Resuelve un punto: nombre del esqueleto, [x,y,z] literal o {"lerp": [a, b, t]}."""
+    S = P["skeleton"]
+    if isinstance(ref, str):
+        return np.array(S[ref], float)
+    if isinstance(ref, dict) and "lerp" in ref:
+        a, b, t = ref["lerp"]
+        pa, pb = skel_point(P, a), skel_point(P, b)
+        return pa + (pb - pa) * float(t)
+    return np.array(ref, float)
+
+
+def resolve_legs(P):
+    """Convierte params.legs (por articulaciones) al formato numerico de BodyField:
+    segments [ax,ay,az,bx,by,bz,ra,rb,k], ellipsoids [cx,cy,cz,rx,ry,rz,k],
+    cage [cx,cy,cz,hx,hy] y root_ring (indice del anillo de jaula del cuerpo)."""
+    rings_y = P["body"]["cage"]["rings_y"]
+    out = []
+    for key in ("front", "hind"):
+        L = P["legs"][key]
+        seg = []
+        for a, b, ra, rb, k in L["segments"]:
+            seg.append(list(skel_point(P, a)) + list(skel_point(P, b)) + [ra, rb, k])
+        ell = []
+        for c, r, k in L["ellipsoids"]:
+            ell.append(list(skel_point(P, c)) + list(r) + [k])
+        cage = []
+        for c, hx, hy in L["cage"]:
+            cage.append(list(skel_point(P, c)) + [hx, hy])
+        root = L.get("root_ring", "auto")
+        if root == "auto":
+            y0 = cage[0][1]
+            root = int(np.clip(np.searchsorted(rings_y, y0) - 1, 0, len(rings_y) - 2))
+        out.append({"segments": seg, "ellipsoids": ell, "cage": cage, "root_ring": root,
+                    "k_body": L["k_body"], "name": key})
+    return out

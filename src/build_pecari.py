@@ -34,7 +34,8 @@ if SRC not in sys.path:
 from pecari_sdf import *  # noqa: F401,F403  (modelo numerico compartido)
 from pecari_sdf import (smoothstep, normalize, num_grad, smin, smax, Sweep, BodyField, HeadField,
                         JawField, project, project_normal, relax, field_laplacian, surface_along,
-                        field_normal, MeshBuilder, mirror_k, head_transform, to_world, to_can)
+                        field_normal, MeshBuilder, mirror_k, head_transform, to_world, to_can,
+                        resolve_legs, skel_point)
 
 T0 = time.time()
 
@@ -199,7 +200,7 @@ def build_tube_object(name, sweep, rings_y, nring, inflate, capf, capb, axis_fro
 
 def build_body(P, coll):
     B = P["body"]
-    legs = [P["legs"]["front"], P["legs"]["hind"]]
+    legs = resolve_legs(P)
     field = BodyField(B, legs)
     C = B["cage"]
     n = C["nring"]
@@ -666,6 +667,81 @@ def measure(P, objs, info, R, T, off):
 validate_cache = {}
 
 
+def leg_scheme_check(P):
+    """Comprueba el zigzag de ungulado (angulos en el plano sagital, grados desde la vertical;
+    positivo = hacia delante (-Y))."""
+    S = P["skeleton"]
+
+    def ang(a, b):
+        d = np.array(S[b]) - np.array(S[a])
+        return math.degrees(math.atan2(-d[1], -d[2]))
+    res = {"humero (hombro->codo)": ang("shoulder", "elbow"),
+           "antebrazo (codo->carpo)": ang("elbow", "carpus"),
+           "femur (cadera->babilla)": ang("hip", "stifle"),
+           "tibia (babilla->corvejon)": ang("stifle", "hock"),
+           "metatarso (corvejon->menudillo)": ang("hock", "fetlock_h"),
+           "pie bajo la cadera (dy pezuna-cadera, m)": S["sole_h"][1] - S["hip"][1]}
+    ok = (res["femur (cadera->babilla)"] > 10 and res["tibia (babilla->corvejon)"] < -20
+          and abs(res["metatarso (corvejon->menudillo)"]) < 15
+          and abs(res["pie bajo la cadera (dy pezuna-cadera, m)"]) < 0.05
+          and res["humero (hombro->codo)"] < 0 and abs(res["antebrazo (codo->carpo)"]) < 10)
+    return res, ok
+
+
+def export_landmarks(P, info, R, T, off, path):
+    """Puntos anatomicos en el marco final del asset (para el rig de la etapa siguiente)."""
+    S = P["meta"]["global_scale"]
+    Sk = P["skeleton"]
+    pts = {}
+
+    def put(name, p):
+        pts[name] = [round(float(v), 5) for v in (np.asarray(p, float) * S + off)]
+    for k, v in Sk.items():
+        if k.startswith("_"):
+            continue
+        if abs(v[0]) < 1e-9:
+            put(k, v)
+        else:
+            put(k + "_L", v)
+            put(k + "_R", [-v[0], v[1], v[2]])
+    H = P["head"]
+    can = {"occiput": H["nuchal_can"], "snout_disc_tip": [0.0, 0.0, 0.0],
+           "jaw_hinge": [0.045, 0.200, -0.004], "chin": [0.0, 0.012, -0.031]}
+    Td = (np.asarray(T, float) - off) / S          # traslacion de la cabeza en el marco de diseno
+    for k, c in can.items():
+        if abs(c[0]) < 1e-9:
+            put(k, to_world(np.array(c), R, Td))
+        else:
+            for sfx, sx in (("_L", 1), ("_R", -1)):
+                put(k + sfx, to_world(np.array(c) * np.array([sx, 1, 1]), R, Td))
+    for sfx, sx in (("_L", 1), ("_R", -1)):
+        put("orbit" + sfx, to_world(info["eye_c_can"] * np.array([sx, 1, 1]), R, Td))
+        put("ear_base" + sfx, to_world(info["ear_base_can"] * np.array([sx, 1, 1]), R, Td))
+    bones = [["spine_neck", "occiput"], ["spine_withers", "spine_neck"], ["spine_loin", "spine_withers"],
+             ["spine_croup", "spine_loin"], ["tail_base", "spine_croup"], ["occiput", "snout_disc_tip"],
+             ["occiput", "jaw_hinge_L"], ["occiput", "jaw_hinge_R"], ["jaw_hinge_L", "chin"],
+             ["occiput", "ear_base_L"], ["occiput", "ear_base_R"], ["occiput", "orbit_L"], ["occiput", "orbit_R"]]
+    for sfx in ("_L", "_R"):
+        bones += [["spine_withers", "scapula" + sfx], ["scapula" + sfx, "shoulder" + sfx],
+                  ["shoulder" + sfx, "elbow" + sfx], ["elbow" + sfx, "carpus" + sfx],
+                  ["carpus" + sfx, "fetlock_f" + sfx], ["fetlock_f" + sfx, "coronet_f" + sfx],
+                  ["coronet_f" + sfx, "toe_f" + sfx], ["spine_croup", "hip" + sfx],
+                  ["hip" + sfx, "stifle" + sfx], ["stifle" + sfx, "hock" + sfx],
+                  ["hock" + sfx, "calcaneus" + sfx], ["hock" + sfx, "fetlock_h" + sfx],
+                  ["fetlock_h" + sfx, "coronet_h" + sfx], ["coronet_h" + sfx, "toe_h" + sfx]]
+    scheme, ok = leg_scheme_check(P)
+    data = {"_doc": "Puntos anatomicos (m) en el marco final del asset: Z arriba, el animal mira a -Y, "
+                    "+X = izquierda del animal, origen en el suelo entre las pezunas. Articulaciones = centros "
+                    "oseos aproximados; orbit = centro del ojo; ear_base = raiz de la oreja en la superficie.",
+            "points": pts, "bones": bones,
+            "leg_scheme_deg_from_vertical": {k: round(v, 3) for k, v in scheme.items()},
+            "leg_scheme_ok": bool(ok)}
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as fh:
+        json.dump(data, fh, indent=1)
+    return ok
+
+
 def fur_thickness(P, obj_name, obj):
     """Grosor de pelaje por vertice a partir de los grupos de vertices (ver params.fur)."""
     FU = P["fur"]
@@ -805,7 +881,8 @@ def main():
     can_surf = surface_along(head_base, [0.0, CAN["u"], CAN["z"]], [1, 0, 0])
     can_nrm = field_normal(head_base, can_surf)
     can_root = can_surf - can_nrm * CAN["inset"]
-    info = {"nuchal_world": np.array(H["nuchal_world"], float)}
+    info = {"nuchal_world": np.array(H["nuchal_world"], float), "eye_c_can": hinfo["eye_c"],
+            "ear_base_can": ear_base_can}
     for side, sfx in ((1, "L"), (-1, "R")):
         m = np.array([side, 1, 1], float)
         ec = to_world(hinfo["eye_c"] * m, R, T)
@@ -864,6 +941,8 @@ def main():
     M = measure(P, objs, info, R_s, T_s, off)
     timings["measure"] = time.time() - t
     export_arrays(P, objs, os.path.join(out_render, "mesh_arrays.npz"), M["_points"])
+    lm_ok = export_landmarks(P, info, R_s, T_s, off, os.path.join(ROOT, "export", "landmarks.json"))
+    log("landmarks.json exportado; esquema de patas %s" % ("OK" if lm_ok else "NO CUMPLE"))
 
     # guardar
     blend_path = os.path.join(ROOT, "blend", "pecari_%s.blend" % version)

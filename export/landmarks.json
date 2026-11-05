@@ -1,0 +1,460 @@
+{
+ "_doc": "Puntos anatomicos (m) en el marco final del asset: Z arriba, el animal mira a -Y, +X = izquierda del animal, origen en el suelo entre las pezunas. Articulaciones = centros oseos aproximados; orbit = centro del ojo; ear_base = raiz de la oreja en la superficie.",
+ "points": {
+  "scapula_L": [
+   0.045,
+   -0.15694,
+   0.39938
+  ],
+  "scapula_R": [
+   -0.045,
+   -0.15694,
+   0.39938
+  ],
+  "shoulder_L": [
+   0.06,
+   -0.21694,
+   0.29938
+  ],
+  "shoulder_R": [
+   -0.06,
+   -0.21694,
+   0.29938
+  ],
+  "elbow_L": [
+   0.058,
+   -0.15694,
+   0.21438
+  ],
+  "elbow_R": [
+   -0.058,
+   -0.15694,
+   0.21438
+  ],
+  "olecranon_L": [
+   0.057,
+   -0.13394,
+   0.22338
+  ],
+  "olecranon_R": [
+   -0.057,
+   -0.13394,
+   0.22338
+  ],
+  "carpus_L": [
+   0.05,
+   -0.16194,
+   0.10938
+  ],
+  "carpus_R": [
+   -0.05,
+   -0.16194,
+   0.10938
+  ],
+  "fetlock_f_L": [
+   0.05,
+   -0.16394,
+   0.04438
+  ],
+  "fetlock_f_R": [
+   -0.05,
+   -0.16394,
+   0.04438
+  ],
+  "coronet_f_L": [
+   0.05,
+   -0.17194,
+   0.02138
+  ],
+  "coronet_f_R": [
+   -0.05,
+   -0.17194,
+   0.02138
+  ],
+  "hoof_back_f_L": [
+   0.05,
+   -0.16794,
+   0.01288
+  ],
+  "hoof_back_f_R": [
+   -0.05,
+   -0.16794,
+   0.01288
+  ],
+  "toe_f_L": [
+   0.05,
+   -0.19394,
+   0.00538
+  ],
+  "toe_f_R": [
+   -0.05,
+   -0.19394,
+   0.00538
+  ],
+  "heel_f_L": [
+   0.05,
+   -0.15694,
+   0.00888
+  ],
+  "heel_f_R": [
+   -0.05,
+   -0.15694,
+   0.00888
+  ],
+  "sole_f_L": [
+   0.05,
+   -0.17494,
+   -0.00062
+  ],
+  "sole_f_R": [
+   -0.05,
+   -0.17494,
+   -0.00062
+  ],
+  "hip_L": [
+   0.065,
+   0.14306,
+   0.34938
+  ],
+  "hip_R": [
+   -0.065,
+   0.14306,
+   0.34938
+  ],
+  "stifle_L": [
+   0.07,
+   0.09306,
+   0.23438
+  ],
+  "stifle_R": [
+   -0.07,
+   0.09306,
+   0.23438
+  ],
+  "hock_L": [
+   0.058,
+   0.20006,
+   0.17138
+  ],
+  "hock_R": [
+   -0.058,
+   0.20006,
+   0.17138
+  ],
+  "calcaneus_L": [
+   0.058,
+   0.22506,
+   0.20438
+  ],
+  "calcaneus_R": [
+   -0.058,
+   0.22506,
+   0.20438
+  ],
+  "fetlock_h_L": [
+   0.055,
+   0.18306,
+   0.04438
+  ],
+  "fetlock_h_R": [
+   -0.055,
+   0.18306,
+   0.04438
+  ],
+  "coronet_h_L": [
+   0.055,
+   0.17506,
+   0.02038
+  ],
+  "coronet_h_R": [
+   -0.055,
+   0.17506,
+   0.02038
+  ],
+  "hoof_back_h_L": [
+   0.055,
+   0.17106,
+   0.01238
+  ],
+  "hoof_back_h_R": [
+   -0.055,
+   0.17106,
+   0.01238
+  ],
+  "toe_h_L": [
+   0.055,
+   0.14306,
+   0.00538
+  ],
+  "toe_h_R": [
+   -0.055,
+   0.14306,
+   0.00538
+  ],
+  "heel_h_L": [
+   0.055,
+   0.18606,
+   0.00858
+  ],
+  "heel_h_R": [
+   -0.055,
+   0.18606,
+   0.00858
+  ],
+  "sole_h_L": [
+   0.055,
+   0.16506,
+   -0.00062
+  ],
+  "sole_h_R": [
+   -0.055,
+   0.16506,
+   -0.00062
+  ],
+  "spine_withers": [
+   0.0,
+   -0.18694,
+   0.39938
+  ],
+  "spine_loin": [
+   0.0,
+   -0.00694,
+   0.39438
+  ],
+  "spine_croup": [
+   0.0,
+   0.14306,
+   0.38438
+  ],
+  "tail_base": [
+   0.0,
+   0.25306,
+   0.35438
+  ],
+  "spine_neck": [
+   0.0,
+   -0.31694,
+   0.35938
+  ],
+  "occiput": [
+   0.0,
+   -0.34194,
+   0.43438
+  ],
+  "snout_disc_tip": [
+   0.0,
+   -0.52037,
+   0.26737
+  ],
+  "jaw_hinge_L": [
+   0.045,
+   -0.33344,
+   0.33859
+  ],
+  "jaw_hinge_R": [
+   -0.045,
+   -0.33344,
+   0.33859
+  ],
+  "chin": [
+   0.0,
+   -0.49763,
+   0.24313
+  ],
+  "orbit_L": [
+   0.03412,
+   -0.41161,
+   0.3754
+  ],
+  "ear_base_L": [
+   0.02002,
+   -0.35479,
+   0.42881
+  ],
+  "orbit_R": [
+   -0.03412,
+   -0.41161,
+   0.3754
+  ],
+  "ear_base_R": [
+   -0.02002,
+   -0.35479,
+   0.42881
+  ]
+ },
+ "bones": [
+  [
+   "spine_neck",
+   "occiput"
+  ],
+  [
+   "spine_withers",
+   "spine_neck"
+  ],
+  [
+   "spine_loin",
+   "spine_withers"
+  ],
+  [
+   "spine_croup",
+   "spine_loin"
+  ],
+  [
+   "tail_base",
+   "spine_croup"
+  ],
+  [
+   "occiput",
+   "snout_disc_tip"
+  ],
+  [
+   "occiput",
+   "jaw_hinge_L"
+  ],
+  [
+   "occiput",
+   "jaw_hinge_R"
+  ],
+  [
+   "jaw_hinge_L",
+   "chin"
+  ],
+  [
+   "occiput",
+   "ear_base_L"
+  ],
+  [
+   "occiput",
+   "ear_base_R"
+  ],
+  [
+   "occiput",
+   "orbit_L"
+  ],
+  [
+   "occiput",
+   "orbit_R"
+  ],
+  [
+   "spine_withers",
+   "scapula_L"
+  ],
+  [
+   "scapula_L",
+   "shoulder_L"
+  ],
+  [
+   "shoulder_L",
+   "elbow_L"
+  ],
+  [
+   "elbow_L",
+   "carpus_L"
+  ],
+  [
+   "carpus_L",
+   "fetlock_f_L"
+  ],
+  [
+   "fetlock_f_L",
+   "coronet_f_L"
+  ],
+  [
+   "coronet_f_L",
+   "toe_f_L"
+  ],
+  [
+   "spine_croup",
+   "hip_L"
+  ],
+  [
+   "hip_L",
+   "stifle_L"
+  ],
+  [
+   "stifle_L",
+   "hock_L"
+  ],
+  [
+   "hock_L",
+   "calcaneus_L"
+  ],
+  [
+   "hock_L",
+   "fetlock_h_L"
+  ],
+  [
+   "fetlock_h_L",
+   "coronet_h_L"
+  ],
+  [
+   "coronet_h_L",
+   "toe_h_L"
+  ],
+  [
+   "spine_withers",
+   "scapula_R"
+  ],
+  [
+   "scapula_R",
+   "shoulder_R"
+  ],
+  [
+   "shoulder_R",
+   "elbow_R"
+  ],
+  [
+   "elbow_R",
+   "carpus_R"
+  ],
+  [
+   "carpus_R",
+   "fetlock_f_R"
+  ],
+  [
+   "fetlock_f_R",
+   "coronet_f_R"
+  ],
+  [
+   "coronet_f_R",
+   "toe_f_R"
+  ],
+  [
+   "spine_croup",
+   "hip_R"
+  ],
+  [
+   "hip_R",
+   "stifle_R"
+  ],
+  [
+   "stifle_R",
+   "hock_R"
+  ],
+  [
+   "hock_R",
+   "calcaneus_R"
+  ],
+  [
+   "hock_R",
+   "fetlock_h_R"
+  ],
+  [
+   "fetlock_h_R",
+   "coronet_h_R"
+  ],
+  [
+   "coronet_h_R",
+   "toe_h_R"
+  ]
+ ],
+ "leg_scheme_deg_from_vertical": {
+  "humero (hombro->codo)": -35.218,
+  "antebrazo (codo->carpo)": 2.726,
+  "femur (cadera->babilla)": 23.499,
+  "tibia (babilla->corvejon)": -59.511,
+  "metatarso (corvejon->menudillo)": 7.624,
+  "pie bajo la cadera (dy pezuna-cadera, m)": 0.022
+ },
+ "leg_scheme_ok": true
+}
