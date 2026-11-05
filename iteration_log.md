@@ -503,3 +503,74 @@ para que se pueda juzgar.
 - *Cenital*: hombros anchos y grupa con bulto.
 - Lo siguiente: ajuste automático de la silueta (paso 4) y, a mano, orejas (más gruesas, en
   concha, más pequeñas de frente), quitar el bulto de la ceja y reducir el papo.
+
+## Paso 4 — Ajuste automático contra siluetas (`src/fit_silhouette.py`)
+
+- **Evaluación**: rejilla de ocupación del SDF de 6 mm + pelaje por transformada de distancia +
+  máscaras a 1/4 de resolución. Tarda ~2,7 s por evaluación, ~0,7 s efectivos con 4 procesos.
+  No usa Blender.
+- **Objetivo**: 0,6·IoU lateral + 0,4·IoU frontal.
+- **Restricciones**:
+  - Medidas globales (`sdf_measures`, mismas definiciones que la malla) con penalización lineal
+    fuera de ±7 % (margen bajo el ±8 % pedido); masa ±20 %.
+  - Landmarks dentro de ±12 %, garantizado por los límites de cada parámetro:
+    - patas ±3–4 cm (≤ 9,5 % de la cruz);
+    - cabeza ±2,5 cm (≤ 11 % de su largo);
+    - inclinación de la cabeza: entre −6° y +6° en la primera pasada; entre −3° y +6° en la
+      segunda.
+- **Espacio**: 44 parámetros.
+  - Alturas dorsal y ventral de las 12 estaciones del tronco.
+  - Anchos de cuello, tronco y grupa.
+  - Elipsoides de grupa y hombro.
+  - Cabeza: inclinación, posición de la nuca y escalas u/z/ancho.
+  - Profundidad de la mandíbula.
+  - Orejas: largo, dirección y posición.
+  - Desplazamiento de las patas.
+- **Ajuste 1** (`fit/fit_log.csv`, `fit/fit_summary.json`, 1504 evaluaciones, 17 min,
+  CMA-ES con σ = 0,3 en el espacio normalizado):
+  - Puntuación 0,794 → 0,820. IoU SDF lateral 0,821 → 0,850 y frontal 0,754 → 0,774, sin
+    violaciones.
+  - Cambios principales: grupa −15 % de ancho, cabeza −5 % de largo y −3,5° de inclinación,
+    orejas más verticales, patas delanteras −2,7 cm y traseras +4 cm (atrás), perfil dorsal y
+    ventral reajustado.
+
+### v07 — iteración 2 (render completo con el ajuste 1)
+
+**Resultado**:
+- IoU de la malla: **lateral 0,854**, **frontal 0,807**. GLB reimportado idéntico.
+- Pero **61 autointersecciones** y **pie trasero −16 %**.
+- Causa, vista en cortes transversales de campo frente a malla:
+  - Al mover la pata trasera 4 cm atrás, el tubo de la jaula entre la raíz y el gaskin
+    atravesaba zonas sin campo y se aplastaba en "paredes".
+  - Fallo propio: el anillo ancho del gaskin y el arranque de los isquiotibiales eran puntos
+    literales que el optimizador no desplazaba con la pata.
+
+**Crítica de los renders**:
+- La silueta mejora, pero el **lomo queda ondulado**. El optimizador movió estaciones contiguas
+  en sentidos opuestos: la IoU no ve esa ondulación y el render sí.
+- Escalón entre la nuca y el cuello, y papo bajo la garganta.
+- Orejas como paletas verticales, finas y enormes de frente.
+- Cabeza vista de frente larga y estrecha (casi equina), porque el ajuste redujo la inclinación.
+
+**Correcciones antes del ajuste 2** (todas de generador o de restricciones, ninguna de objetivos):
+1. Los puntos de la pata trasera pasan a ser articulaciones con nombre (`gaskin_ring`,
+   `hamstring_top`) y se mueven con ella.
+2. Anillos del tronco **automáticos** (`cage.rings_y = "auto"`): un par encierra la raíz de cada
+   pata (la trasera abarca 13 cm, de −6 a +7 cm alrededor del gaskin) y el resto se reparte.
+   Con esto: **0 autointersecciones** y pie trasero dentro de tolerancia.
+3. Desplazamiento de la pata trasera limitado a ±2 cm y devuelto a +1,5 cm, porque la cadera debe
+   quedar ~8–10 cm delante de la base de la cola. Patas delanteras ±3 cm.
+4. Probado y **descartado** (empeoraba: 75–164 autointersecciones):
+   - raíz trasera más lateral (k = 3–4);
+   - muslos más separados;
+   - un paso de "desenredo" local con relajación fuerte.
+5. **Penalización de suavidad** de los perfiles dorsal y ventral (segunda diferencia, con la nuca
+   de la cabeza como primer punto del perfil dorsal para unir cuello y cabeza sin escalón). El
+   diseño a mano puntúa ~0,005 y el perfil ondulado del ajuste 1 ~0,33. Antes del ajuste 2 se
+   suavizaron las estaciones con un filtro [¼ ½ ¼] aplicado dos veces.
+6. Orejas: base más gruesa (1,4 cm), punta curvada hacia atrás y dirección limitada a "arriba,
+   afuera y atrás". Inclinación mínima de la cabeza: 20°.
+7. Diagnóstico nuevo en `iou.json`: **IoU lateral por encima de 0,22 m** (tronco + cabeza). Con el
+   ajuste 1 y los anillos automáticos da **0,935**, frente a 0,840 en total. La diferencia está
+   casi toda en las patas: la foto está en mitad del paso (una pata trasera adelantada y otra
+   atrás) y el modelo está en pose neutra simétrica.

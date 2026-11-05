@@ -59,10 +59,10 @@ def param_space(P):
     sp += [("w.neck", "mul", 0.85, 1.15), ("w.trunk", "mul", 0.88, 1.12), ("w.rump", "mul", 0.85, 1.15),
            ("rump.cy", "add", -0.03, 0.03), ("rump.cz", "add", -0.03, 0.03), ("rump.rz", "add", -0.02, 0.02),
            ("shoulder.rx", "mul", 0.7, 1.2),
-           ("head.pitch", "add", -6.0, 6.0), ("head.ny", "add", -0.025, 0.025), ("head.nz", "add", -0.025, 0.025),
+           ("head.pitch", "add", -3.0, 6.0), ("head.ny", "add", -0.025, 0.025), ("head.nz", "add", -0.025, 0.025),
            ("head.su", "mul", 0.92, 1.05), ("head.sz", "mul", 0.90, 1.10), ("head.sw", "mul", 0.88, 1.08),
            ("jaw.sz", "mul", 0.80, 1.10),
-           ("ear.length", "add", -0.008, 0.006), ("ear.dx", "add", -0.3, 0.2), ("ear.dy", "add", -0.15, 0.25),
+           ("ear.length", "add", -0.008, 0.006), ("ear.dx", "add", -0.15, 0.15), ("ear.dy", "add", -0.12, 0.15),
            ("ear.u", "add", -0.015, 0.012),
            ("front.dy", "add", -0.03, 0.03), ("hind.dy", "add", -0.02, 0.02)]
     return sp
@@ -187,9 +187,29 @@ def sdf_measures(P, m, occ, axes, h):
     return M
 
 
-def penalty(P, M):
+W_SMOOTH = 2.0     # diseno a mano: ~0.005; perfil ondulado del ajuste 1: ~0.33
+
+
+def smooth_penalty(P):
+    """Suavidad de los perfiles dorsal y ventral: suma de (segunda diferencia)^2 por
+    estacion, con la nuca de la cabeza como primer punto del perfil dorsal (une cuello y
+    cabeza sin escalon)."""
+    st = np.array(P["body"]["stations"], float)
+    nuc = P["head"]["nuchal_world"]
+    y = np.concatenate([[nuc[1]], st[1:, 0]])
+    zt = np.concatenate([[nuc[2]], st[1:, 1]])
     pen = 0.0
-    det = {}
+    for z in (zt, np.concatenate([[st[1, 2]], st[1:, 2]])):
+        # segunda derivada discreta con paso no uniforme
+        d1 = np.diff(z) / np.diff(y)
+        d2 = np.diff(d1) / (0.5 * (y[2:] - y[:-2]))
+        pen += float(np.sum((d2 * 0.05 ** 2) ** 2))   # curvatura en escala de 5 cm
+    return W_SMOOTH * pen
+
+
+def penalty(P, M):
+    pen = smooth_penalty(P)
+    det = {"smooth": round(pen, 4)} if pen > 0.01 else {}
     for k, val in M.items():
         t = P["targets"].get(k)
         if not t:
