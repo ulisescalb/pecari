@@ -1,0 +1,212 @@
+{
+  "version": "v01",
+  "measurements": {
+    "head_length": 0.23752921769958119,
+    "hb_length": 0.9161512510194505,
+    "head_hb_ratio": 0.2592685622982774,
+    "withers_height": 0.4190158247947693,
+    "croup_height": 0.4214150011539459,
+    "chest_depth": 0.22641238570213318,
+    "belly_clearance": 0.18802045285701752,
+    "body_width": 0.2271781712770462,
+    "head_width": 0.11683831363916397,
+    "disc_width": 0.042639024555683136,
+    "ear_length": 0.07441575234389966,
+    "hind_foot": 0.17522385694112205,
+    "eye_diameter": 0.016999999061226845,
+    "canine_exposed": 0.02239774540066719,
+    "volume_union_m3": 0.02512130971658269,
+    "volume_sum_m3": 0.025841470308946245,
+    "mass_kg": 25.12130971658269
+  },
+  "validation": {
+    "Pecari_Body": {
+      "verts": 4482,
+      "faces": 4480,
+      "quads": 4480,
+      "tris": 0,
+      "ngons": 0,
+      "non_manifold_edges": 0,
+      "boundary_edges": 0,
+      "non_manifold_verts": 0,
+      "loose_verts": 0,
+      "loose_edges": 0,
+      "inconsistent_normals": 0,
+      "degenerate_faces": 0,
+      "volume_m3": 0.024050417189957606,
+      "self_intersections": 0,
+      "outward": true
+    },
+    "Pecari_Head": {
+      "verts": 1890,
+      "faces": 1888,
+      "quads": 1888,
+      "tris": 0,
+      "ngons": 0,
+      "non_manifold_edges": 0,
+      "boundary_edges": 0,
+      "non_manifold_verts": 0,
+      "loose_verts": 0,
+      "loose_edges": 0,
+      "inconsistent_normals": 0,
+      "degenerate_faces": 0,
+      "volume_m3": 0.0010905632618207553,
+      "self_intersections": 0,
+      "outward": true
+    },
+    "Pecari_LowerJaw": {
+      "verts": 930,
+      "faces": 928,
+      "quads": 928,
+      "tris": 0,
+      "ngons": 0,
+      "non_manifold_edges": 0,
+      "boundary_edges": 0,
+      "non_manifold_verts": 0,
+      "loose_verts": 0,
+      "loose_edges": 0,
+      "inconsistent_normals": 0,
+      "degenerate_faces": 0,
+      "volume_m3": 0.0006853307273335521,
+      "self_intersections": 0,
+      "outward": true
+    },
+    "Pecari_EyeL": {
+      "verts": 98,
+      "faces": 96,
+      "quads": 96,
+      "tris": 0,
+      "ngons": 0,
+      "non_manifold_edges": 0,
+      "boundary_edges": 0,
+      "non_manifold_verts": 0,
+      "loose_verts": 0,
+      "loose_edges": 0,
+      "inconsistent_normals": 0,
+      "degenerate_faces": 0,
+      "volume_m3": 2.3893845889662816e-06,
+      "self_intersections": 0,
+      "outward": true
+    },
+    "Pecari_EarL": {
+      "verts": 354,
+      "faces": 352,
+      "quads": 352,
+      "tris": 0,
+      "ngons": 0,
+      "non_manifold_edges": 0,
+      "boundary_edges": 0,
+      "non_manifold_verts": 0,
+      "loose_verts": 0,
+      "loose_edges": 0,
+      "inconsistent_normals": 0,
+      "degenerate_faces": 0,
+      "volume_m3": 4.3336444424145044e-06,
+      "self_intersections": 0,
+      "outward": true
+    },
+    "Pecari_CanineL": {
+      "verts": 50,
+      "faces": 48,
+      "quads": 48,
+      "tris": 0,
+      "ngons": 0,
+      "non_manifold_edges": 0,
+      "boundary_edges": 0,
+      "non_manifold_verts": 0,
+      "loose_verts": 0,
+      "loose_edges": 0,
+      "inconsistent_normals": 0,
+      "degenerate_faces": 0,
+      "volume_m3": 8.565352205894573e-07,
+      "self_intersections": 0,
+      "outward": true
+    },
+    "Pecari_EyeR": {
+      "verts": 98,
+      "faces": 96,
+      "quads": 96,
+      "tris": 0,
+      "ngons": 0,
+      "non_manifold_edges": 0,
+      "boundary_edges": 0,
+      "non_manifold_verts": 0,
+      "loose_verts": 0,
+      "loose_edges": 0,
+      "inconsistent_normals": 0,
+      "degenerate_faces": 0,
+      "volume_m3": 2.3893845889662655e-06,
+      "self_intersections": 0,
+      "outward": true
+    },
+    "Pecari_EarR": {
+      "verts": 354,
+      "faces": 352,
+      "quads": 352,
+      "tris": 0,
+      "ngons": 0,
+      "non_manifold_edges": 0,
+      "boundary_edges": 0,
+      "non_manifold_verts": 0,
+      "loose_verts": 0,
+      "loose_edges": 0,
+      "inconsistent_normals": 0,
+      "degenerate_faces": 0,
+      "volume_m3": 4.333645771399908e-06,
+      "self_intersections": 0,
+      "outward": true
+    },
+    "Pecari_CanineR": {
+      "verts": 50,
+      "faces": 48,
+      "quads": 48,
+      "tris": 0,
+      "ngons": 0,
+      "non_manifold_edges": 0,
+      "boundary_edges": 0,
+      "non_manifold_verts": 0,
+      "loose_verts": 0,
+      "loose_edges": 0,
+      "inconsistent_normals": 0,
+      "degenerate_faces": 0,
+      "volume_m3": 8.565352219963923e-07,
+      "self_intersections": 0,
+      "outward": true
+    }
+  },
+  "totals": {
+    "quads": 8288,
+    "tris": 0,
+    "ngons": 0,
+    "verts": 8306,
+    "faces": 8288
+  },
+  "groups": {
+    "fur_mane": {
+      "Pecari_Body": 239,
+      "Pecari_Head": 98
+    },
+    "fur_collar": {
+      "Pecari_Body": 139
+    },
+    "fur_belly": {
+      "Pecari_Body": 344
+    },
+    "fur_legs": {
+      "Pecari_Body": 1252
+    },
+    "bare_hooves": {
+      "Pecari_Body": 292
+    },
+    "fur_face": {
+      "Pecari_Head": 1701,
+      "Pecari_LowerJaw": 930,
+      "Pecari_EarL": 354,
+      "Pecari_EarR": 354
+    },
+    "bare_snout": {
+      "Pecari_Head": 189
+    }
+  },
+  "all_ok": false
+}
