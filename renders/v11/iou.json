@@ -1,0 +1,12 @@
+{
+ "model_height_m": 0.5004266545176506,
+ "side": 0.6557145804647794,
+ "side_upper_z022": 0.7469081055787407,
+ "side_scale_m_per_px": 0.0005764454789848566,
+ "real_side_walking": 0.7583079847908746,
+ "real_side_walking_upper_z022": 0.9333795574045184,
+ "real_side_walking_scale_m_per_px": 0.0010899370438174198,
+ "front": 0.7703721562267128,
+ "front_upper_z022": 0.7984411114672785,
+ "front_scale_m_per_px": 0.0005111610362795205
+}

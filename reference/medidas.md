@@ -120,7 +120,9 @@ tamaños):
    una imagen IA. Con las fotos reales (vientre/cruz 0,37–0,44) y la indicación del usuario
    (40–44 %), se adopta **0,41 × 0,43 = 0,178 m**. Patas más cortas.
 4. **Corvejón**: en las fotos reales queda a ~0,29 de la cruz; en la v09 estaba a ~0,40 (patas de
-   ciervo). Se baja a ~0,33 (0,14 m).
+   ciervo). Se baja a 0,155 m (0,36 de la cruz). No baja más porque el pie estirado de 210 mm
+   (punto 5) necesita esa longitud entre el talón y la punta de la pezuña: con el corvejón a
+   0,29 de la cruz el pie mediría ~170 mm (−19 %).
 5. **Pie trasero**: los 210 mm de la fuente 2 son una medida de mastozoología tomada con el pie
    **estirado** (del talón a la punta de la pezuña). Con el corvejón bajo y el metatarso casi
    vertical, la cuerda talón–punta en pose de pie no puede compararse con esa cifra.
@@ -146,3 +148,7 @@ Objetivos vigentes desde la etapa 2b (tolerancia ±8 %; masa ±25 %):
 | `disc_width` | 0,046 | **0,050** | disco grande |
 | `hind_foot` | 0,210 (cuerda de pie) | 0,210 (**pie estirado**) | fuente 2 |
 | `ear_length`, `body_width`, `eye_diameter`, `canine_exposed`, `mass_kg` | sin cambios | sin cambios | |
+
+**Resultado v12** (malla, sin pelo): HB 0,914 m, cruz 0,426 m (HB/cruz 2,15), cabeza 0,301 m
+(cabeza/HB 0,33), altura libre 0,167 m (39 % de la cruz), corvejón 0,155 m, masa 22,2 kg. Todo
+dentro de ±8 % y dentro de los rangos de la bibliografía (HB 75–100 cm, cruz 30–51 cm, 15–30 kg).

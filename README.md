@@ -7,8 +7,8 @@ partir de `src/params.json`. Las decisiones y las críticas de cada versión est
 ## Regenerar
 
 ```bash
-blender -b -P src/build_pecari.py -- --version v08          # Blender 4.x/5.x instalado
-python src/build_pecari.py --version v08                    # o bpy de PyPI (venv, ver abajo)
+blender -b -P src/build_pecari.py -- --version v12          # Blender 4.x/5.x instalado
+python src/build_pecari.py --version v12                    # o bpy de PyPI (venv, ver abajo)
 ```
 
 Opciones: `--no-render`, `--lods` (LOD1/LOD2 por decimación), `--samples N`,
@@ -25,9 +25,14 @@ python3.11 -m venv ~/.venvs/pecari && ~/.venvs/pecari/bin/pip install -r require
 
 ```bash
 python src/reference_masks.py                 # máscaras de reference/ref_*.jpg -> reference/masks/
-python src/silhouette.py --version v08        # IoU de la malla de una versión + superposiciones
+python src/silhouette.py --version v12        # IoU de la malla de una versión + superposiciones
 python src/fit_silhouette.py --evals 1500 --write   # CMA-ES de los parámetros del SDF contra las fotos
 ```
+
+Métrica desde la etapa 2b: IoU de **tronco y cabeza** (z > 0,22 m). La lateral se mide contra la
+foto real `reference/real_side_walking.jpg` y la frontal contra la imagen IA, escalada por la
+altura del modelo. Las patas, al paso en todas las fotos, no se ajustan. Las proporciones salen de
+las fotos reales (`reference/medidas.md`); las imágenes IA solo dan el aspecto general.
 
 ## Estructura
 
@@ -38,10 +43,11 @@ python src/fit_silhouette.py --evals 1500 --write   # CMA-ES de los parámetros 
 | `src/build_pecari.py` | construye, valida, mide, exporta (`.blend`, `.glb`, landmarks) y renderiza |
 | `src/render_views.py` | renders de arcilla, silueta, grupos de pelaje, alambre y hoja de contacto |
 | `src/silhouette.py`, `src/fit_silhouette.py` | métrica IoU contra fotos y optimizador |
+| `src/compare_sheet.py` | hoja comparativa por vista (lateral IA, lateral real, frontal, 3/4, cabeza) |
 | `reference/` | fotos de referencia, máscaras, hitos de píxel y `medidas.md` |
 | `export/landmarks.json` | puntos anatómicos y huesos para el rig |
 | `blend/` | `pecari_vNN.blend` / `.glb` (y `_lod1`/`_lod2` si se piden) |
-| `renders/vNN/` | vistas, `contact_sheet.png`, `iou_*.png`, `report.md`, `params_used.json` |
+| `renders/vNN/` | vistas, `contact_sheet.png`, `comparativa.png` (referencia a la izquierda, render a la derecha), `iou_*.png`, `report.md`, `params_used.json` |
 | `fit/` | registro y resumen del optimizador |
 
 Convenciones: metros, Z arriba, el animal mira hacia −Y y el origen está en el suelo, centrado

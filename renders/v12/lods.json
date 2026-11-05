@@ -1,0 +1,21 @@
+{
+ "LOD0": {
+  "tris": 15808
+ },
+ "LOD1": {
+  "tris": 5048,
+  "glb": "blend/pecari_v12_lod1.glb",
+  "iou_vs_lod0": {
+   "real_side_walking": 0.9963,
+   "front": 0.9957
+  }
+ },
+ "LOD2": {
+  "tris": 1566,
+  "glb": "blend/pecari_v12_lod2.glb",
+  "iou_vs_lod0": {
+   "real_side_walking": 0.9885,
+   "front": 0.9829
+  }
+ }
+}

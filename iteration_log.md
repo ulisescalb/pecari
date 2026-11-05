@@ -761,3 +761,130 @@ para que se pueda juzgar.
    - Isquiotibiales con unión más suave (k = 0,02) que arrancan dentro de la grupa.
    - Anillo extra de jaula a media pierna (`gaskin_mid`).
    - Se probó y se quitó un volumen de jamón aparte: creaba un bulto trasero.
+
+## v10 — iteración de render 1 de 3 (etapa 2b)
+
+Primera regeneración con los cambios del paso 3.
+
+- **IoU tronco+cabeza (z > 0,22 m)**: lateral contra la foto real 0,930; frontal IA 0,796;
+  lateral IA (diagnóstico) 0,722.
+- **Medidas**: todas dentro de ±8 %. El pie trasero estirado queda justo en el límite (−8,0 %).
+  Ancho de cabeza 0,130 m, disco 5,3 cm, masa 22,8 kg.
+- **Malla**: 0 autointersecciones; GLB reimportado idéntico.
+
+Crítica por defecto, sobre la hoja `renders/v10/comparativa.png` (contra la línea base v09):
+
+| # | defecto | v10 frente a v09 | nota |
+|---|---|---|---|
+| 1 | facetas de la pata trasera | mejor | corvejón bajo y continuo, pero con bultos en el muslo y en la corva |
+| 2 | anillo y papada cabeza–cuello | mejor / peor | el anillo y la papada desaparecen, pero la cabeza cruza el cuello en ángulo rasante y deja una línea en dientes de sierra |
+| 3 | orejas de burro | igual | más cortas, pero son hojas finas tipo cuchilla y de perfil se ven de canto |
+| 4 | cabeza larga y estrecha | mejor | cráneo más ancho y ojos altos; el hocico aún se lee largo |
+| 5 | mandíbula en rollo | igual | sigue leyéndose como un rollo bajo el labio |
+| 6 | grupa angulosa | igual | el elipsoide de la línea media añade un bulto irregular |
+| 7 | patas largas y finas | resuelto | patas cortas, brazo y muslo gruesos |
+
+Cambios para v11:
+- **Costura (defecto 2)**: la malla de la cabeza termina dentro del cuerpo con un borde vivo
+  (`mesh_end_u` 0,245, redondeo 3 mm); la de la mandíbula, en 0,222. Así no hay cruce rasante
+  entre las dos superficies.
+- **Cabeza y mandíbula (defectos 4 y 5)**:
+  - Inclinación de 25°; borde inferior de la cabeza 3 mm más bajo y mejillas 6 mm más anchas.
+  - Mandíbula 2–4 mm menos profunda en todas las estaciones.
+  - Colmillo de 0,0235 m: tras bajar el labio, la parte expuesta quedaba en −7 %.
+- **Grupa (defecto 6)**: la caída de la grupa se codifica en las tres últimas estaciones del
+  barrido, con dorso 0,372 → 0,345 → 0,318 y tapa trasera de 22 mm. El elipsoide de línea media es
+  ahora más pequeño y bajo, y el muñón de cola baja 2 cm (`tail_base` a 0,315 m).
+- **Orejas (defecto 3)**: más anchas (+15–50 % según la altura), con copa más honda y lomo más
+  grueso. Más abiertas, con dirección (0,75; 0,5; 1).
+- **Pata trasera (defecto 1)**: el isquiotibial arranca en un punto entre la rodilla y el
+  calcáneo, con unión suave (k = 0,026).
+
+## v11 — iteración de render 2 de 3
+
+- **IoU tronco+cabeza**: lateral real 0,933; frontal IA 0,798; lateral IA 0,747.
+- **Medidas**: todas dentro de tolerancia. Colmillo +8,4 % (tolerancia ±10 %), cabeza 0,301 m
+  (+5,8 %), ancho de cabeza 0,137 m, masa 22,9 kg.
+- **Malla**: 0 autointersecciones; GLB idéntico.
+
+| # | defecto | v11 frente a v10 | nota |
+|---|---|---|---|
+| 1 | pata trasera | mejor | continua; queda un escalón leve en la corva |
+| 2 | cabeza–cuello | mejor | sin dientes de sierra; queda una línea fina detrás del ojo, donde asoma el final truncado de la cabeza |
+| 3 | orejas | igual | anchas pero demasiado erguidas y hacia delante: se leen como orejas de conejo |
+| 4 | cabeza | mejor | cuña ancha con disco grande |
+| 5 | mandíbula | mejor | más corta y menos profunda, con la barbilla retrasada |
+| 6 | grupa | resuelto | redonda y caída; el muñón cierra la cola |
+| 7 | patas | resuelto | — |
+
+Cambios para v12:
+- **Orejas**: más abiertas hacia fuera, con dirección (1; 0,5; 1), y 0,084 m de largo. El pelaje
+  de la oreja pasa de 3 a 8 mm en la silueta y en la masa de pelo.
+- **Costura**: la cabeza termina en u = 0,255 con un borde de 2 mm de redondeo. La copia de la
+  cabeza dentro del cuerpo se mete 3 mm (antes 1,5), así la superficie de la cabeza cubre el
+  escalón.
+- **Tronco**: anchos de las estaciones 3–12 × 0,94. En la superposición frontal el tronco salía
+  por fuera de la imagen IA en los flancos, y la masa baja de 22,9 a 22,2 kg.
+
+## v12 — iteración de render 3 de 3 (final de la etapa 2b)
+
+- **IoU tronco+cabeza**: lateral real **0,934**; frontal IA **0,814**; lateral IA 0,746.
+- **Medidas**: todas dentro de ±8 %; masa 22,2 kg.
+- **Malla**: 0 autointersecciones, sin bordes abiertos ni no-manifold; GLB reimportado idéntico.
+  7904 quads.
+- **LOD**: LOD1 tiene 5048 triángulos (IoU frente a LOD0: 0,996 lateral y 0,996 frontal); LOD2
+  tiene 1566 (0,989 y 0,983).
+
+| # | defecto | v12 frente a v11 | estado final |
+|---|---|---|---|
+| 1 | pata trasera | igual | **mejorado**: continua y con el corvejón bajo; en la lateral IA aún se ve un escalón donde el isquiotibial sale de la grupa |
+| 2 | cabeza–cuello | mejor | **mejorado**: no hay anillo ni papada. Queda una línea de costura visible detrás de la mejilla, muy clara en 3/4: es el borde del final de la cabeza, que asoma ~3 mm sobre el cuello. El pelo la disimulará, pero no la resuelve |
+| 3 | orejas | mejor | **mejorado**: 7,1 cm, base gruesa, punta redondeada, abiertas ~45° y en la parte alta y trasera del cráneo. De frente y en 3/4 siguen leyéndose como láminas finas (abanicos), no como orejas peludas |
+| 4 | cabeza larga y estrecha | igual | **mejorado** en medidas (ancho 13,7 cm, disco 5,3 cm, frente que sube hasta las orejas). De frente y en 3/4 el hocico se sigue leyendo largo y cónico, tipo tapir |
+| 5 | mandíbula en rollo | igual | **mejorado**: más corta y baja, con la barbilla retrasada; en la lateral aún se ve una franja de labio inferior separada |
+| 6 | grupa angulosa | igual | **resuelto**: redonda y caída, cola vestigial cerrada; algo abultada |
+| 7 | patas largas y finas | igual | **resuelto**: altura libre 39 % de la cruz, brazo y muslo gruesos |
+
+### Cierre de la etapa 2b
+
+**Antes y después** (v09 medida con las métricas y objetivos de 2b):
+
+| | v09 | v12 | umbral |
+|---|---:|---:|---|
+| IoU tronco+cabeza, lateral contra la foto real | 0,690 | **0,934** | ≥ 0,93 ✓ |
+| IoU tronco+cabeza, frontal IA (escala por altura) | 0,830 | **0,814** | ≥ 0,85 ✗ |
+| IoU tronco+cabeza, lateral IA (diagnóstico) | 0,941 | 0,746 | — |
+| IoU de cabeza | — | — | no hay `head_front` ni `head_side` |
+
+**Frontal**: no se alcanza el 0,85. En `renders/v12/iou_front.png`, casi todo lo que falta son
+las orejas de la imagen IA, mucho mayores que los 7,5 cm de la bibliografía, y lo alto de la
+cabeza. Lo que sobra está en los flancos, sobre todo en uno: la foto IA no es frontal pura. Para
+subirlo habría que agrandar las orejas y estrechar el tronco por debajo de lo que piden las fotos
+reales y la masa. No se hizo.
+
+**Lateral IA**: baja de 0,941 a 0,746. Era lo esperado: la v09 seguía la proporción alto/largo de
+la imagen generada (1,55), y ahora se sigue la foto real (2,1).
+
+**Verificación**: todas las medidas dentro de ±8 % (masa ±25 %), 0 autointersecciones y GLB
+idéntico. El comando único `blender -b -P src/build_pecari.py -- --version vNN` funciona igual.
+
+**Vistas previas**: además de las tres iteraciones con render completo, se usaron vistas previas
+ligeras de la hoja comparativa (`renders/vcmp/`). Son solo las 5 vistas, sin informe ni
+validación, y se sobrescriben. Se hicieron al menos dos, antes de v11 y antes de v12, para revisar
+la costura y las orejas. Se declaran aquí. La hoja de la línea base v09 se guardó en
+`renders/v09/comparativa.png`.
+
+**Pendientes para la siguiente etapa**:
+1. Costura visible detrás de la mejilla. Opciones: fundir la cabeza en el cuerpo como una sola
+   malla (perdiendo el objeto `Pecari_Head` separado), o terminar la cabeza más atrás, bajo un
+   pliegue de piel del cuello.
+2. Orejas con volumen de pelo: tarjetas o un casquete más grueso.
+3. Hocico más corto y alto en la lectura frontal y en 3/4: hoy cumple el ancho de cabeza, pero el
+   disco queda bajo y la cuña se afina demasiado.
+4. Labio inferior que se lee como franja aparte.
+5. Escalón del isquiotibial en la lateral.
+
+**Lectura de frente y en 3/4**: de frente cambió poco. La cabeza sigue leyéndose estrecha y
+alargada, tipo tapir, y las orejas como láminas. En 3/4 el cambio es claro: cuerpo más bajo y
+pesado, patas cortas, grupa redonda y cuello sin anillo. Aun así, el hocico cónico y la costura
+detrás de la mejilla todavía lo delatan como malla base más que como pecarí.
