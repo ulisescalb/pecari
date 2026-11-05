@@ -15,19 +15,22 @@
       "source": "lit"
     },
     "withers_height": {
-      "value": 0.42,
+      "value": 0.43,
       "tol": 0.08,
-      "source": "lit"
+      "source": "real-photo",
+      "_doc": "Etapa 2b: HB/cruz = 2.10 medido en fotos reales (= bibliografia); 0.90/2.1."
     },
     "head_length": {
-      "value": 0.23,
+      "value": 0.285,
       "tol": 0.08,
-      "source": "lit"
+      "source": "real-photo",
+      "_doc": "Etapa 2b: cabeza/HB = 0.32 (fotos reales 0.33) x HB 0.90."
     },
     "head_hb_ratio": {
-      "value": 0.255,
+      "value": 0.32,
       "tol": 0.08,
-      "source": "user"
+      "source": "real-photo",
+      "_doc": "Etapa 2b: fotos reales 0.329-0.335; adoptado 0.32."
     },
     "ear_length": {
       "value": 0.075,
@@ -37,24 +40,26 @@
     "hind_foot": {
       "value": 0.21,
       "tol": 0.08,
-      "source": "lit"
+      "source": "lit",
+      "_doc": "Fuente 2 (210 mm). Etapa 2b: medido como pie estirado talon -> menudillo -> punta de la pezuna."
     },
     "croup_height": {
-      "value": 0.43,
+      "value": 0.415,
       "tol": 0.08,
-      "source": "design-photo",
-      "_doc": "Etapa 2: revisado de 0.405 a 0.430 (foto lateral: grupa casi a la altura del lomo, redondeada)."
+      "source": "real-photo",
+      "_doc": "Etapa 2b: grupa/cruz ~0.965 en fotos reales."
     },
     "chest_depth": {
-      "value": 0.225,
+      "value": 0.25,
       "tol": 0.08,
-      "source": "design"
+      "source": "design",
+      "_doc": "Etapa 2b: cruz - esternon con la nueva altura libre."
     },
     "belly_clearance": {
-      "value": 0.225,
+      "value": 0.178,
       "tol": 0.08,
-      "source": "design-photo",
-      "_doc": "Etapa 2: revisado de 0.190 (estimacion de la etapa 1, ~45% de la cruz) a 0.225 a partir de la foto lateral (vientre con flecos a ~0.20 m + 3.5 cm de pelo, a la escala alineada). Ver iteration_log."
+      "source": "real-photo",
+      "_doc": "Etapa 2b: vientre/cruz = 0.41 (fotos reales 0.37-0.44) x 0.43."
     },
     "body_width": {
       "value": 0.215,
@@ -62,14 +67,16 @@
       "source": "design"
     },
     "head_width": {
-      "value": 0.115,
+      "value": 0.13,
       "tol": 0.08,
-      "source": "lit"
+      "source": "design",
+      "_doc": "Etapa 2b: cigomatico 105 mm + ~12 mm de masetero y piel por lado."
     },
     "disc_width": {
-      "value": 0.046,
+      "value": 0.05,
       "tol": 0.08,
-      "source": "design"
+      "source": "design",
+      "_doc": "Etapa 2b: disco nasal grande."
     },
     "eye_diameter": {
       "value": 0.017,

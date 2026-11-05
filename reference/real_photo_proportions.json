@@ -1,0 +1,24 @@
+{
+ "real_side_walking": {
+  "HB_px": 827.2,
+  "head_px": 279.2,
+  "HB_over_withers_skin": 2.073,
+  "total_len_over_withers_skin": 1.935,
+  "head_over_HB": 0.335,
+  "belly_over_withers": 0.373,
+  "hock_over_withers": 0.275,
+  "withers_skin_m_if_HB090": 0.434,
+  "midback_over_withers": 0.992
+ },
+ "real_side_walking_head_low": {
+  "HB_px": 673.7,
+  "head_px": 223.7,
+  "HB_over_withers_skin": 2.13,
+  "total_len_over_withers_skin": 1.685,
+  "head_over_HB": 0.329,
+  "belly_over_withers": 0.437,
+  "hock_over_withers": 0.312,
+  "withers_skin_m_if_HB090": 0.422,
+  "midback_over_withers": 1.08
+ }
+}

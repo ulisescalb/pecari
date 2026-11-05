@@ -77,3 +77,72 @@ proporcionó el usuario.
   de su eje.
 - **Masa** = volumen de la **unión** de todas las mallas (volumen exacto del cuerpo más un
   Monte Carlo de 40 000 puntos para las piezas que lo solapan) × 1000 kg/m³.
+
+## Etapa 2b — Proporciones a partir de fotos reales
+
+El usuario aportó dos fotos **reales** (`reference/real_side_walking.jpg` y
+`reference/real_side_walking_head_low.jpg`). Las dos muestran al animal al paso, de perfil. Las
+tres vistas de la etapa 2 (lateral, frontal, 3/4) y el esqueleto son **generadas por IA**: sirven
+para el aspecto general y los rasgos cualitativos, no para proporciones ni tamaños.
+
+**Método**:
+- Puntos anotados a mano (`reference/ref_landmarks.json`): centro del disco nasal, punto nucal
+  (dorso de la cabeza detrás de las orejas), base de la cola, tope de la capa densa en la cruz
+  (sin contar las cerdas erizadas de la crin), borde inferior del vientre, corvejón y suelo.
+- A todo lo medido sobre el pelo se le restan 1,5 cm de pelaje.
+- La escala sale de suponer HB = 0,90 m; los cocientes no dependen de ese valor.
+- Cálculo en `reference/real_photo_proportions.json`.
+
+| cociente (a nivel de piel) | foto real 1 (cabeza alta) | foto real 2 (cabeza baja) | media | imágenes IA | bibliografía |
+|---|---:|---:|---:|---:|---:|
+| HB / cruz | 2,07 | 2,13 | **2,10** | ~1,55 | ~2,1 (HB 75–100 cm, cruz 30–51 cm) |
+| largo total horizontal / cruz | 1,94 | 1,69 (cabeza baja) | — | — | — |
+| cabeza / HB | 0,335 | 0,329 | **0,33** | ~0,39 | 0,24–0,27 (brief) |
+| vientre / cruz | 0,37 | 0,44 | **0,41** | 0,39 | — |
+| corvejón / cruz | 0,28 | 0,31 | **0,29** | — | — |
+| lomo medio / cruz | 0,99 | 1,08 | 1,04 (lomo arqueado) | — | — |
+
+**Conclusiones** (las fotos reales mandan sobre las proporciones; la bibliografía, sobre los
+tamaños):
+1. **Largo/alto**: las fotos reales confirman la bibliografía (HB/cruz ≈ 2,1). El 1,55 de las
+   imágenes IA es un artefacto del generador (cuerpo demasiado alto y compacto), y la regla del
+   "punto medio" entre 1,55 y 2,1 (≈ 1,83) queda **sustituida** por la medida real.
+   - Con HB = 0,90 m (centro del rango bibliográfico), cruz = 0,90 / 2,1 = **0,43 m**, dentro de
+     30–51 cm.
+   - Masa: el volumen debe dar 22 kg ±25 % (16,5–27,5 kg), dentro del rango real de 15–30 kg.
+2. **Cabeza/cuerpo**: las fotos reales dan 0,33. Es mayor que el 24–27 % del brief porque la cabeza
+   externa incluye el disco nasal (~2 cm por delante de los incisivos) y el tejido nucal detrás
+   del cráneo de 211–237 mm. Esa suma anatómica da ~0,25–0,27 m (0,28–0,30 de HB). Se adopta
+   **cabeza/HB = 0,32** (las fotos, algo moderadas porque el punto nucal se marca sobre la crin)
+   → **largo de cabeza = 0,285 m**.
+   - Las imágenes IA exageran aún más la cabeza (0,39); no se siguen.
+3. **Altura libre bajo el vientre**: el 0,225 m de la etapa 2 venía de calibrar la escala sobre
+   una imagen IA. Con las fotos reales (vientre/cruz 0,37–0,44) y la indicación del usuario
+   (40–44 %), se adopta **0,41 × 0,43 = 0,178 m**. Patas más cortas.
+4. **Corvejón**: en las fotos reales queda a ~0,29 de la cruz; en la v09 estaba a ~0,40 (patas de
+   ciervo). Se baja a ~0,33 (0,14 m).
+5. **Pie trasero**: los 210 mm de la fuente 2 son una medida de mastozoología tomada con el pie
+   **estirado** (del talón a la punta de la pezuña). Con el corvejón bajo y el metatarso casi
+   vertical, la cuerda talón–punta en pose de pie no puede compararse con esa cifra.
+   - Desde la etapa 2b se mide como **longitud del pie estirado**: talón (malla) → centro del
+     menudillo → punta de la pezuña (malla).
+6. **Grupa**: ~0,965 de la cruz → **0,415 m**. **Pecho**: cruz − esternón ≈ **0,25 m**.
+7. **Ancho de cabeza**: con una cabeza mayor y "cráneo y mejillas más anchos", se adopta
+   **0,13 m** (arco cigomático de 105 mm + ~12 mm de masetero y piel por lado). Disco nasal
+   "grande": **0,050 m**.
+
+Objetivos vigentes desde la etapa 2b (tolerancia ±8 %; masa ±25 %):
+
+| clave | etapa 2 | **etapa 2b** | origen |
+|---|---:|---:|---|
+| `hb_length` | 0,900 | 0,900 | bibliografía |
+| `withers_height` | 0,420 | **0,430** | HB/cruz = 2,1 (fotos reales = bibliografía) |
+| `head_length` | 0,230 | **0,285** | cabeza/HB = 0,32 (fotos reales) |
+| `head_hb_ratio` | 0,255 | **0,320** | fotos reales |
+| `belly_clearance` | 0,225 | **0,178** | vientre/cruz = 0,41 (fotos reales; 40–44 % pedido) |
+| `chest_depth` | 0,225 | **0,250** | cruz − esternón |
+| `croup_height` | 0,430 | **0,415** | grupa/cruz ≈ 0,965 (fotos reales) |
+| `head_width` | 0,115 | **0,130** | cigomático + tejidos blandos |
+| `disc_width` | 0,046 | **0,050** | disco grande |
+| `hind_foot` | 0,210 (cuerda de pie) | 0,210 (**pie estirado**) | fuente 2 |
+| `ear_length`, `body_width`, `eye_diameter`, `canine_exposed`, `mass_kg` | sin cambios | sin cambios | |

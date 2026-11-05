@@ -65,5 +65,109 @@
  "skeleton_side": {
   "use_for_iou": false,
   "note": "generada por IA con errores: cola de ~10 vertebras (la real es vestigial), huesos duplicados en la pata trasera, pelvis y costillas irreales. Solo guia cualitativa del zigzag de las patas: femur adelante-abajo, tibia atras-abajo, metatarso casi vertical."
+ },
+ "real_side_walking": {
+  "file": "real_side_walking.jpg",
+  "origin": "foto real",
+  "faces": "izquierda",
+  "pose": "al paso, cabeza casi horizontal, crin erizada",
+  "nose_disc": [
+   95,
+   432
+  ],
+  "eye": [
+   208,
+   333
+  ],
+  "ear_tip": [
+   275,
+   220
+  ],
+  "ear_base_rear": [
+   300,
+   265
+  ],
+  "nuchal_coat": [
+   305,
+   248
+  ],
+  "withers_coat_top": [
+   450,
+   222
+  ],
+  "midback_coat_top": [
+   560,
+   225
+  ],
+  "tail_base_coat": [
+   850,
+   305
+  ],
+  "rump_rear_coat": [
+   868,
+   370
+  ],
+  "belly_coat_bottom": [
+   600,
+   495
+  ],
+  "hock_far_hind": [
+   872,
+   520
+  ],
+  "ground_y": 628,
+  "use_for_iou": false
+ },
+ "real_side_walking_head_low": {
+  "file": "real_side_walking_head_low.jpg",
+  "origin": "foto real",
+  "faces": "derecha",
+  "pose": "al paso, cabeza baja hozando",
+  "nose_disc": [
+   672,
+   360
+  ],
+  "eye": [
+   620,
+   248
+  ],
+  "ear_tip": [
+   630,
+   140
+  ],
+  "ear_base_rear": [
+   615,
+   175
+  ],
+  "nuchal_coat": [
+   595,
+   150
+  ],
+  "withers_coat_top": [
+   450,
+   75
+  ],
+  "midback_coat_top": [
+   300,
+   50
+  ],
+  "tail_base_coat": [
+   145,
+   145
+  ],
+  "rump_rear_coat": [
+   137,
+   200
+  ],
+  "belly_coat_bottom": [
+   330,
+   272
+  ],
+  "hock_far_hind": [
+   95,
+   300
+  ],
+  "ground_y": 397,
+  "use_for_iou": false
  }
 }
