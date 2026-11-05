@@ -28,6 +28,11 @@ cola 3–6 cm.
 
 ## Objetivos (adulto, malla base)
 
+Desde la etapa 2 la tolerancia es de **±8 %** (masa ±25 %). Los objetivos de origen bibliográfico
+(HB, cruz, cabeza, oreja, pie trasero y masa) **no se cambiaron**. Solo se revisaron dos objetivos
+de diseño que en la etapa 1 eran estimaciones propias sin fuente, a partir de la foto lateral que
+proporcionó el usuario.
+
 | clave en params.json | objetivo | rango aceptado | origen y razonamiento |
 |---|---:|---|---|
 | `hb_length` | 0,900 m | ±5 % | Brief y fuentes 1–2: 0,80–1,05 m; 0,90 queda en el centro. |
@@ -38,9 +43,9 @@ cola 3–6 cm.
 | `hind_foot` | 0,210 m | ±5 % | Fuente 2. Se mide de la tuberosidad calcánea a la punta de la pezuña. Fija la altura del corvejón (~0,15–0,17 m). |
 | `head_width` | 0,115 m | ±5 % | Ancho cigomático de 105 mm (fuente 5) más maseteros y piel. |
 | `mass_kg` | 22 kg | ±25 % | Brief y fuente 3. Control: volumen de la unión de mallas × 1000 kg/m³. |
-| `croup_height` | 0,405 m | ±5 % | Diseño. El pecarí carga la masa adelante: la grupa queda algo por debajo de la cruz y cae hacia la cola. |
+| `croup_height` | 0,430 m | ±8 % | Diseño. Etapa 1: 0,405 (masa adelante). **Etapa 2: 0,430**: en la foto lateral la grupa queda casi a la altura del lomo y cae redondeada hacia la cola. |
 | `chest_depth` | 0,225 m | ±5 % | Diseño. Cruz − esternón; con eso la altura libre bajo el pecho queda en ~45 % de la cruz (patas cortas). |
-| `belly_clearance` | 0,190 m | ±5 % | Diseño. Punto más bajo de la línea ventral entre manos y patas. |
+| `belly_clearance` | 0,225 m | ±8 % | Diseño. Etapa 1: 0,190 (~45 % de la cruz, sin fuente). **Etapa 2: 0,225**: en la foto lateral, a la escala alineada, los flecos del vientre llegan a ~0,20 m y con 3,5 cm de pelo la piel queda en ~0,23 m. |
 | `body_width` | 0,215 m | ±5 % | Diseño. El pecarí es más estrecho que un cerdo; el tronco es algo más alto que ancho. |
 | `disc_width` | 0,046 m | ±5 % | Diseño, a partir de fotos: el rinario es un disco ancho, más ancho que alto. |
 | `eye_diameter` | 0,017 m | ±5 % | Diseño. Ojo pequeño. |

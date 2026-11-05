@@ -61,6 +61,7 @@ def parse_args():
     ap.add_argument("--samples", type=int, default=None)
     ap.add_argument("--engine", default="auto")
     ap.add_argument("--res", type=int, default=None)
+    ap.add_argument("--lods", action="store_true", help="exportar LOD1/LOD2 por decimacion")
     return ap.parse_args(argv)
 
 
@@ -657,6 +658,7 @@ def measure(P, objs, info, R, T, off):
 
 
 validate_cache = {}
+glb_check_global = {}
 
 
 def leg_scheme_check(P):
@@ -734,6 +736,113 @@ def export_landmarks(P, info, R, T, off, path):
     return ok
 
 
+def build_lods(P, objs, out_dir, version, coll):
+    """LOD1/LOD2 por decimacion (colapso de aristas, simetria en X) a partir de LOD0.
+    Devuelve triangulos por LOD y la IoU de silueta (lateral/frontal, solo piel) de cada LOD
+    contra el LOD0 para comprobar que la silueta se conserva."""
+    import silhouette as SIL
+    cfg = P.get("lod", {"LOD1": 4800, "LOD2": 1500})
+    tris0 = sum(sum(len(p.vertices) - 2 for p in o.data.polygons) for o in objs.values())
+    res = {"LOD0": {"tris": tris0}}
+    arr0 = os.path.join(out_dir, "mesh_arrays.npz")
+    for lod, target in cfg.items():
+        if lod.startswith("_"):
+            continue
+        ratio = min(1.0, target / float(tris0))
+        lod_objs = {}
+        for n, o in objs.items():
+            c = o.copy()
+            c.data = o.data.copy()
+            c.data.materials.clear()          # sin los materiales de arcilla del render
+            c.name = n + "_" + lod
+            coll.objects.link(c)
+            small = any(k in n for k in ("Eye", "Canine"))
+            md = c.modifiers.new("dec", "DECIMATE")
+            md.decimate_type = "COLLAPSE"
+            md.ratio = max(ratio * (2.5 if small else 1.0), 0.05)
+            md.use_symmetry = True
+            md.symmetry_axis = "X"
+            dg = bpy.context.evaluated_depsgraph_get()
+            me = bpy.data.meshes.new_from_object(c.evaluated_get(dg))
+            c.modifiers.clear()
+            old = c.data
+            c.data = me
+            bpy.data.meshes.remove(old)
+            lod_objs[n] = c
+        tris = sum(sum(len(p.vertices) - 2 for p in o.data.polygons) for o in lod_objs.values())
+        bpy.ops.object.select_all(action="DESELECT")
+        for o in lod_objs.values():
+            o.select_set(True)
+        path = os.path.join(ROOT, "blend", "pecari_%s_%s.glb" % (version, lod.lower()))
+        bpy.ops.export_scene.gltf(filepath=path, export_format="GLB", use_selection=True,
+                                  export_yup=True, export_apply=True)
+        # silueta del LOD contra la del LOD0 (piel)
+        tmp = os.path.join(out_dir, "mesh_arrays_%s.npz" % lod.lower())
+        data = {}
+        for n, o in lod_objs.items():
+            me = o.data
+            me.calc_loop_triangles()
+            tri = np.empty(len(me.loop_triangles) * 3, dtype=np.int32)
+            me.loop_triangles.foreach_get("vertices", tri)
+            data[n + "/V"] = get_V(o)
+            data[n + "/N"] = get_N(o)
+            data[n + "/F"] = tri.reshape(-1, 3)
+            data[n + "/T"] = np.zeros(len(o.data.vertices))
+        data["landmarks_json"] = np.load(arr0)["landmarks_json"]
+        np.savez_compressed(tmp, **data)
+        o0, lm = SIL.load_mesh_arrays(arr0)
+        o1, _ = SIL.load_mesh_arrays(tmp)
+        refs = {v: SIL.Reference(v, 0.5) for v in SIL.VIEWS}
+        al = SIL.Alignment(refs, float(o0["Pecari_Head"]["V"][:, 1].min()), float(lm["tail_base"][1]))
+        sim = {v: SIL.iou(SIL.mesh_silhouette(o1, al, refs[v], fur=False),
+                          SIL.mesh_silhouette(o0, al, refs[v], fur=False)) for v in SIL.VIEWS}
+        os.remove(tmp)
+        res[lod] = {"tris": tris, "glb": os.path.relpath(path, ROOT),
+                    "iou_vs_lod0": {k: round(v, 4) for k, v in sim.items()}}
+        for o in lod_objs.values():
+            me = o.data
+            bpy.data.objects.remove(o, do_unlink=True)
+            bpy.data.meshes.remove(me)
+        log("%s: %d triangulos, IoU vs LOD0 %s" % (lod, tris, res[lod]["iou_vs_lod0"]))
+    return res
+
+
+def glb_roundtrip_check(glb_path, objs):
+    """Reimporta el GLB y compara cada pieza: mismos vertices (tolerancia 1e-5 m) y
+    triangulos = 2 x quads. Borra lo importado al terminar."""
+    before = set(bpy.data.objects.keys())
+    out = {}
+    try:
+        bpy.ops.import_scene.gltf(filepath=glb_path)
+    except Exception as e:
+        return {"error": {"ok": False, "msg": str(e)}}
+    new = [bpy.data.objects[k] for k in set(bpy.data.objects.keys()) - before]
+    for n, o in objs.items():
+        cand = [m for m in new if m.type == "MESH" and (m.name == n or m.name.startswith(n + "."))]
+        if not cand:
+            out[n] = {"ok": False, "msg": "no importado"}
+            continue
+        m = cand[0]
+        A = np.array([(m.matrix_world @ v.co)[:] for v in m.data.vertices])
+        B = get_V(o)
+        tris = sum(len(p.vertices) - 2 for p in m.data.polygons)
+        quads = sum(1 for p in o.data.polygons if len(p.vertices) == 4)
+        same_n = len(A) == len(B)
+        err = float("inf")
+        if same_n:
+            ka = np.lexsort(np.round(A, 5).T)
+            kb = np.lexsort(np.round(B, 5).T)
+            err = float(np.abs(A[ka] - B[kb]).max())
+        out[n] = {"ok": bool(same_n and err < 1e-5 and tris == 2 * quads), "verts": len(A),
+                  "tris": tris, "max_err_m": err}
+    for m in new:
+        me = m.data if m.type == "MESH" else None
+        bpy.data.objects.remove(m, do_unlink=True)
+        if me is not None and me.users == 0:
+            bpy.data.meshes.remove(me)
+    return out
+
+
 def fur_thickness(P, obj_name, obj):
     """Grosor de pelaje por vertice a partir de los grupos de vertices (ver params.fur)."""
     FU = P["fur"]
@@ -804,6 +913,10 @@ def write_report(path_md, path_json, version, P, M, VAL, groups, timings, engine
         unit = "kg" if key == "mass_kg" else ("" if key == "head_hb_ratio" else "m")
         lines.append("| %s | %.3f %s | %.3f %s | %+.1f %% | ±%d %% | %s | %s |"
                      % (key, tv, unit, v, unit, 100 * err, round(100 * tol), src, "si" if ok else "NO"))
+    if glb_check_global:
+        okg = all(c.get("ok") for c in glb_check_global.values())
+        lines += ["", "GLB reimportado: **%s** (%s)." % ("identico" if okg else "DIFERENCIAS",
+                  ", ".join("%s %s" % (k.replace("Pecari_", ""), "ok" if v.get("ok") else v) for k, v in glb_check_global.items()))]
     if "iou_side" in M:
         lines += ["", "IoU de silueta (piel + pelaje) contra las fotos: **lateral %.3f**, **frontal %.3f** "
                   "(superposiciones iou_side.png / iou_front.png)." % (M["iou_side"], M["iou_front"])]
@@ -953,6 +1066,9 @@ def main():
         log("aviso: no se pudo exportar GLB:", e)
     bpy.ops.wm.save_as_mainfile(filepath=blend_path, compress=True)
     log("blend:", blend_path)
+    glb_check = glb_roundtrip_check(glb_path, objs)
+    glb_check_global.update(glb_check)
+    log("GLB reimportado: %s" % ("identico" if all(c["ok"] for c in glb_check.values()) else "DIFERENCIAS"))
 
     engine = "sin render"
     if not args.no_render:
@@ -962,6 +1078,13 @@ def main():
             "head_center": (0.5 * (np.array(M["_points"]["snout_tip"]) + np.array(M["_points"]["nuchal"]))
                             + np.array([0.0, 0.0, -0.025])).tolist()})
         timings["render"] = time.time() - t
+    if args.lods:
+        try:
+            lods = build_lods(P, objs, out_render, version, coll)
+            with open(os.path.join(out_render, "lods.json"), "w") as fh:
+                json.dump(lods, fh, indent=1)
+        except ImportError as e:
+            log("aviso: LOD sin IoU (%s)" % e)
     # IoU de silueta contra las fotos (requiere opencv: venv con bpy de PyPI)
     try:
         import silhouette
