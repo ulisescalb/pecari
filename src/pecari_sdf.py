@@ -248,10 +248,11 @@ class BodyField:
 class HeadField:
     """Cabeza en marco canonico (disco en u=0, u=+Y hacia atras)."""
 
-    def __init__(self, H, socket=None):
+    def __init__(self, H, socket=None, trunc=None):
         self.H = H
         self.sweep = Sweep(H["stations"], H["cap_front"], H["cap_back"])
         self.socket = socket  # (center, radii, k)
+        self.trunc = trunc    # u maximo de la MALLA de la cabeza (el cuerpo cubre lo de detras)
 
     def __call__(self, P):
         H = self.H
@@ -265,19 +266,24 @@ class HeadField:
         if self.socket is not None:
             c, r, k = self.socket
             d = smax(d, -sd_ellipsoid(Q, c, r), k)
+        if self.trunc is not None:
+            d = smax(d, Q[:, 1] - self.trunc, self.H.get("mesh_end_round", 0.008))
         return d
 
 
 class JawField:
-    def __init__(self, J):
+    def __init__(self, J, trunc=None):
         self.J = J
         self.sweep = Sweep(J["stations"], J["cap_front"], J["cap_back"])
+        self.trunc = trunc
 
     def __call__(self, P):
         Q = absx(P)
         d = self.sweep.sdf(Q)
         for e in self.J.get("ellipsoids", []):
             d = smin(d, sd_ellipsoid(Q, e["c"], e["r"]), e["k"])
+        if self.trunc is not None:
+            d = smax(d, Q[:, 1] - self.trunc, self.J.get("mesh_end_round", 0.008))
         return d
 
 

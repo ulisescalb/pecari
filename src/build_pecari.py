@@ -322,7 +322,7 @@ def build_body(P, coll):
 def build_head(P, coll):
     H = P["head"]
     EYE = P["eye"]
-    base = HeadField(H)
+    base = HeadField(H, trunc=H.get("mesh_end_u"))
     C = H["cage"]
     obj, _ = build_tube_object("Pecari_Head", base.sweep, C["rings_u"], C["nring"], C["inflate"],
                                C["cap_front"], C["cap_back"], [0, -1, 0], coll)
@@ -343,7 +343,7 @@ def build_head(P, coll):
     eye_c = eye_surf - nrm * EYE["depth"]
     rs = (EYE["radius"] + EYE["socket_gap"]) * np.asarray(EYE["socket_scale"], float)
     rs = np.maximum(rs, EYE["radius"] + EYE["socket_gap"])
-    field = HeadField(H, socket=(eye_c, rs, EYE["socket_k"]))
+    field = HeadField(H, socket=(eye_c, rs, EYE["socket_k"]), trunc=H.get("mesh_end_u"))
 
     # --- comisura: punto de superficie ---
     MC = H["mouth_corner"]
@@ -371,7 +371,7 @@ def build_head(P, coll):
 
 def build_jaw(P, coll, head_base=None):
     J = P["jaw"]
-    field = JawField(J)
+    field = JawField(J, trunc=J.get("mesh_end_u"))
     C = J["cage"]
     obj, _ = build_tube_object("Pecari_LowerJaw", field.sweep, C["rings_u"], C["nring"],
                                C["inflate"], C["cap_front"], C["cap_back"], [0, -1, 0], coll)
@@ -639,7 +639,8 @@ def measure(P, objs, info, R, T, off):
     disc = Vh[proj > proj.max() - 0.0008 * S]
     P_tip = disc.mean(0)
     nuc = lmw(info["nuchal_world"])
-    midh = Vh[np.abs(Vh[:, 0]) < 1e-5]
+    # punto nucal: superficie dorsal de cabeza o cuerpo (la nuca la cubre el cuerpo desde la etapa 2b)
+    midh = np.vstack([Vh[np.abs(Vh[:, 0]) < 1e-5], Vb[np.abs(Vb[:, 0]) < 1e-5]])
     P_nuc = midh[np.argmin(np.linalg.norm(midh - nuc, axis=1))]
     M["head_length"] = float(np.linalg.norm(P_tip - P_nuc))
     midb = Vb[np.abs(Vb[:, 0]) < 1e-5]
@@ -669,10 +670,11 @@ def measure(P, objs, info, R, T, off):
     base = info["ear_base"]
     tip = Ve[np.argmax((Ve - base) @ e3)]
     tree_h = bvh_of(objs["Pecari_Head"])
-    hit = None
+    tree_b = bvh_of(objs["Pecari_Body"])
     o = Vector(base + e3 * 0.02 * S)
-    loc, nrm, idx, dist = tree_h.ray_cast(o, Vector(-e3), 0.1)
-    hit = np.array(loc) if loc is not None else base
+    hits = [h for h in (tree_h.ray_cast(o, Vector(-e3), 0.1), tree_b.ray_cast(o, Vector(-e3), 0.1))
+            if h[0] is not None]
+    hit = np.array(min(hits, key=lambda h: h[3])[0]) if hits else base
     M["ear_length"] = float(np.linalg.norm(tip - hit))
     # pie trasero: tuberosidad calcanea -> punta de la pezuna
     hy = LM["hind_leg_y"] * S + shift
@@ -1037,8 +1039,9 @@ def main():
     CAN = P["canine"]
     objs = {"Pecari_Body": body, "Pecari_Head": head, "Pecari_LowerJaw": jaw}
     a = math.radians(EAR["ray_deg"])
-    ear_base_can = surface_along(head_base, [0.0, EAR["u"], EAR["z0"]], [math.sin(a), 0.0, math.cos(a)])
-    nrm_can = field_normal(head_base, ear_base_can)
+    head_full = HeadField(H)          # sin truncar: la oreja nace sobre la nuca (cubierta por el cuerpo)
+    ear_base_can = surface_along(head_full, [0.0, EAR["u"], EAR["z0"]], [math.sin(a), 0.0, math.cos(a)])
+    nrm_can = field_normal(head_full, ear_base_can)
     ear_root_can = ear_base_can - nrm_can * EAR["sink"]
     can_surf = surface_along(head_base, [0.0, CAN["u"], CAN["z"]], [1, 0, 0])
     can_nrm = field_normal(head_base, can_surf)

@@ -690,3 +690,74 @@ para que se pueda juzgar.
      sobresalga 4–5 mm.
   4. Ajuste opcional de pose (patas en paso) solo para medir la IoU, sin cambiar la pose neutra
      del asset.
+
+---
+
+# ETAPA 2b — Corrección dirigida de forma (v10 en adelante, máx. 3 iteraciones con render)
+
+## Paso 1 — Fotos reales y proporciones
+
+- Dos fotos **reales** nuevas (`reference/real_side_walking.jpg` y
+  `reference/real_side_walking_head_low.jpg`), ambas al paso. Las de la etapa 2 se tratan como
+  **generadas por IA**: solo aspecto y rasgos cualitativos. El esqueleto no se usa.
+- Medido sin pelo (detalle y tabla en `reference/medidas.md` → "Etapa 2b"):
+  - HB/cruz = **2,10**, igual que la bibliografía. El 1,55 de las imágenes IA es un artefacto del
+    generador; la regla del punto medio (1,83) queda sustituida por la medida real.
+  - Cabeza/HB = 0,33 (se adopta 0,32).
+  - Vientre/cruz = 0,41.
+  - Corvejón/cruz = 0,29.
+- **Objetivos revisados**: cruz 0,43, cabeza 0,285, cabeza/HB 0,32, altura libre 0,178, pecho
+  0,25, grupa 0,415, ancho de cabeza 0,13, disco 0,050. El pie trasero se mide estirado
+  (talón → menudillo → punta) para compararlo con los 210 mm de mastozoología.
+
+## Paso 2 — Métricas y herramientas
+
+- **IoU de tronco y cabeza (z > 0,22 m)**, la métrica de esta etapa:
+  - Lateral contra la **foto real** (`real_side_walking`, máscara GrabCut con rectángulo). La
+    máscara sigue la capa densa, sin las puntas de las cerdas erizadas, así que el pelaje de
+    comparación se escala al 45 %.
+  - Frontal contra la imagen IA, escalada por la **altura del propio modelo** (compara forma y
+    anchos, no la proporción alto/largo de una imagen generada).
+  - La lateral IA queda como diagnóstico.
+  - Las patas no se ajustan a ninguna foto (todas están al paso): el optimizador ya no mueve las
+    patas y solo puntúa por encima de 0,22 m.
+- **Hoja comparativa** (`renders/vNN/comparativa.png`, `src/compare_sheet.py`): para cada vista,
+  foto de referencia a la izquierda y render a la derecha, con el mismo lado, la misma orientación
+  y la misma altura. Renders con fondo transparente (`cmp_*.png`).
+  - Vistas: lateral IA, lateral real, frontal IA, 3/4 IA y cabeza real.
+- Línea base: la hoja de v09 (`renders/vcmp`, no versionada) confirma los defectos de la lista:
+  anillo de la cabeza sobre el cuello, bulbo de la mandíbula, orejas de burro, cabeza estrecha y
+  patas de ciervo.
+
+## Paso 3 — Cambios en el SDF y la jaula (sondeos sin render)
+
+1. **Unión cabeza–cuello (defecto 2)**: `neck_fusion`. El campo del cuerpo incluye la parte
+   trasera de la cabeza (u ≥ 0,17) y de la mandíbula (u ≥ 0,15), metidas 2 mm hacia dentro y
+   unidas con k = 0,035.
+   - El cuello envuelve la nuca y la garganta sigue a la mandíbula de forma tangente: desaparecen
+     el anillo y el bulbo de papada.
+   - La cabeza sigue siendo un objeto aparte (`Pecari_Head`), visible 2 mm por fuera del cuerpo
+     donde se solapan, así que no hay z-fighting.
+2. **Proporciones y patas (defecto 7)**:
+   - Altura libre 0,214 → ~0,18; corvejón a 0,155 (0,36 de la cruz; el pie estirado de 210 mm
+     no deja bajarlo más).
+   - Brazo (r 0,044) y muslo (r 0,050) más gruesos; los muslos más cerca de la línea media para no
+     ensanchar el cuerpo.
+   - Espolones detrás de los menudillos y pezuñas puntiagudas.
+3. **Cabeza (defecto 4)**:
+   - 0,285 m de largo, inclinación 24°, nuca a 0,405 m (~3 cm bajo la cruz, como en la foto real).
+   - Cráneo y mejillas más anchos, frente que sube recta hacia las orejas, disco de 5 cm y ojos a
+     u = 0,155, altos.
+4. **Mandíbula (defecto 5)**:
+   - Barbilla 2,2 cm detrás del disco, corta y estrecha (el labio superior la cubre).
+   - El borde inferior de la cabeza baja tras la comisura (u = 0,095) y la mejilla tapa la rama
+     mandibular.
+5. **Orejas (defecto 3)**: base gruesa (1,6 cm), punta redondeada, 7,5 cm, abiertas ~33° hacia
+   fuera y ~19° hacia atrás. La concavidad mira hacia fuera y adelante, como en la foto real; antes
+   miraba hacia delante y de perfil se veían de canto.
+6. **Grupa (defecto 6)**: un elipsoide de línea media redondea el final y rellena el perineo, más un
+   muñón de cola vestigial (cono de 2 cm hacia atrás y abajo).
+7. **Pata trasera (defecto 1)**:
+   - Isquiotibiales con unión más suave (k = 0,02) que arrancan dentro de la grupa.
+   - Anillo extra de jaula a media pierna (`gaskin_mid`).
+   - Se probó y se quitó un volumen de jamón aparte: creaba un bulto trasero.
