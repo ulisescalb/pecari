@@ -199,20 +199,62 @@ def build_tube_object(name, sweep, rings_y, nring, inflate, capf, capb, axis_fro
     return make_object(name, mb.verts, mb.faces, coll), rings
 
 
+def intersecting_verts(obj):
+    """Vertices de triangulos que se cruzan sin compartir vertices (autointersecciones)."""
+    bm = bmesh.new()
+    bm.from_mesh(obj.data)
+    lt = bm.calc_loop_triangles()
+    verts = [v.co.copy() for v in bm.verts]
+    tris = [(l[0].vert.index, l[1].vert.index, l[2].vert.index) for l in lt]
+    bm.free()
+    tree = BVHTree.FromPolygons(verts, tris, all_triangles=True)
+    bad = set()
+    for i, j in tree.overlap(tree):
+        if i < j and not (set(tris[i]) & set(tris[j])):
+            bad.update(tris[i])
+            bad.update(tris[j])
+    return bad
+
+
+def untangle(obj, field, mid, rounds=8):
+    """Relaja con fuerza solo alrededor de las autointersecciones hasta eliminarlas."""
+    E = get_E(obj)
+    n = len(obj.data.vertices)
+    for r in range(rounds):
+        bad = intersecting_verts(obj)
+        if not bad:
+            return r
+        w = np.zeros(n)
+        w[list(bad)] = 1.0
+        for _ in range(2 + r // 2):                 # dilatar a 2-3 anillos de vecinos
+            acc = np.zeros(n)
+            np.maximum.at(acc, E[:, 0], w[E[:, 1]])
+            np.maximum.at(acc, E[:, 1], w[E[:, 0]])
+            w = np.maximum(w, acc)
+        V = relax(get_V(obj), E, field, 10, 0.5, mid=mid, weight=w)
+        V = project(V, field, 3, mid=mid)
+        set_V(obj, V)
+    return rounds if intersecting_verts(obj) else rounds
+
+
 def build_body(P, coll):
     B = P["body"]
     legs = resolve_legs(P)
     field = BodyField(B, legs)
     C = B["cage"]
     n = C["nring"]
-    kout, kin = n // 3, n // 3 + 1         # 4, 5 para n=12 (cara inferior-lateral)
     skip = {}
     for L in legs:
+        # cara raiz: entre k=kout y k=kin (por defecto 4-5, inferior-lateral; la trasera puede
+        # nacer mas lateral, 3-4, para dejar sitio a la entrepierna)
+        L["kout"] = L["root_k"] if L.get("root_k") is not None else n // 3
+        L["kin"] = L["kout"] + 1
         i = L["root_ring"]
-        skip.setdefault(i, set()).update({kout, mirror_k(kin, n)})  # caras k=4 (4-5) y k=7 (7-8)
+        skip.setdefault(i, set()).update({L["kout"], mirror_k(L["kin"], n)})
 
     def add_legs(mb, rings):
         for L in legs:
+            kout, kin = L["kout"], L["kin"]
             i = L["root_ring"]
             for side in (1, -1):
                 if side == 1:
@@ -243,7 +285,7 @@ def build_body(P, coll):
                     prev = cur
                 mb.faces.append(list(prev))  # suela
 
-    obj, rings = build_tube_object("Pecari_Body", field.sweep, C["rings_y"], n, C["inflate"],
+    obj, rings = build_tube_object("Pecari_Body", field.sweep, C.get("rings_y_resolved", C["rings_y"]), n, C["inflate"],
                                    C["cap_front"], C["cap_rear"], [0, -1, 0], coll,
                                    skip=skip, extra=add_legs)
     cage_faces = len(obj.data.polygons)
@@ -270,8 +312,9 @@ def build_body(P, coll):
         V = relax(V, E, field, B["crease_relax_iters"], 0.45, mid=mid, weight=wc)
     V = project(V, field, 4, mid=mid)
     set_V(obj, V)
+    nr = untangle(obj, field, mid, B.get("untangle_rounds", 0))
     fix_normals(obj)
-    log("Body: jaula %d caras -> %d caras" % (cage_faces, len(obj.data.polygons)))
+    log("Body: jaula %d caras -> %d caras (desenredo: %d rondas)" % (cage_faces, len(obj.data.polygons), nr))
     return obj, field
 
 

@@ -481,11 +481,34 @@ def skel_point(P, ref):
     return np.array(ref, float)
 
 
+def auto_body_rings(P):
+    """Anillos de la jaula del tronco colocados en funcion de las patas: un par que encierra
+    la raiz de cada pata (delantera +-0.03 m, trasera -0.06/+0.05 m alrededor del primer
+    anillo de la pata) y el resto repartido uniformemente."""
+    C = P["body"]["cage"]
+    spec = C.get("auto_rings", {"front": [0.03, 0.03], "hind": [0.06, 0.05],
+                                "n_neck": 4, "n_mid": 5, "n_rear": 3, "rear_end": 0.345})
+    st = P["body"]["stations"]
+    y0 = st[0][0]
+    y1 = spec["rear_end"]
+    yf = float(skel_point(P, P["legs"]["front"]["cage"][0][0])[1])
+    yh = float(skel_point(P, P["legs"]["hind"]["cage"][0][0])[1])
+    f0, f1 = yf - spec["front"][0], yf + spec["front"][1]
+    h0, h1 = yh - spec["hind"][0], yh + spec["hind"][1]
+    rings = list(np.linspace(y0, f0, spec["n_neck"] + 1))
+    rings += list(np.linspace(f1, h0, spec["n_mid"] + 1))
+    n_rear = max(1, min(spec["n_rear"], int(round((y1 - h1) / 0.02))))
+    rings += list(np.linspace(h1, y1, n_rear + 1))
+    return [round(float(r), 4) for r in rings]
+
+
 def resolve_legs(P):
     """Convierte params.legs (por articulaciones) al formato numerico de BodyField:
     segments [ax,ay,az,bx,by,bz,ra,rb,k], ellipsoids [cx,cy,cz,rx,ry,rz,k],
     cage [cx,cy,cz,hx,hy] y root_ring (indice del anillo de jaula del cuerpo)."""
-    rings_y = P["body"]["cage"]["rings_y"]
+    if P["body"]["cage"].get("rings_y") == "auto":
+        P["body"]["cage"]["rings_y_resolved"] = auto_body_rings(P)
+    rings_y = P["body"]["cage"].get("rings_y_resolved", P["body"]["cage"]["rings_y"])
     out = []
     for key in ("front", "hind"):
         L = P["legs"][key]
@@ -503,7 +526,7 @@ def resolve_legs(P):
             y0 = cage[0][1]
             root = int(np.clip(np.searchsorted(rings_y, y0) - 1, 0, len(rings_y) - 2))
         out.append({"segments": seg, "ellipsoids": ell, "cage": cage, "root_ring": root,
-                    "k_body": L["k_body"], "name": key})
+                    "k_body": L["k_body"], "name": key, "root_k": L.get("root_k", None)})
     return out
 
 

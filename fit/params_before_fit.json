@@ -1,0 +1,561 @@
+{
+  "_doc": "Todas las proporciones del pecari. Unidades: metros. Ejes: Z arriba, el animal mira hacia -Y, su lado izquierdo es +X. Coordenadas del 'marco de diseno' (antes de global_scale y del recentrado automatico entre pezunas). Etapa 2: las patas se definen por articulaciones con nombre (skeleton) y la forma se ajusta contra las siluetas de reference/. Las partes pares se definen solo para el lado izquierdo (+X) y se reflejan. Cabeza y mandibula en marco canonico (disco nasal en el origen, u=+Y hacia atras).",
+  "meta": {
+    "species": "Pecari tajacu",
+    "common_name": "pecari de collar",
+    "variant": "collared",
+    "stage": "1-base-mesh",
+    "global_scale": 1.0
+  },
+  "targets": {
+    "_doc": "Objetivos de reference/medidas.md. tol = tolerancia relativa (etapa 2: +-8%). source: lit = bibliografia, user = brief, design = estimacion propia, design-photo = estimacion revisada con la foto de referencia.",
+    "hb_length": {
+      "value": 0.9,
+      "tol": 0.08,
+      "source": "lit"
+    },
+    "withers_height": {
+      "value": 0.42,
+      "tol": 0.08,
+      "source": "lit"
+    },
+    "head_length": {
+      "value": 0.23,
+      "tol": 0.08,
+      "source": "lit"
+    },
+    "head_hb_ratio": {
+      "value": 0.255,
+      "tol": 0.08,
+      "source": "user"
+    },
+    "ear_length": {
+      "value": 0.075,
+      "tol": 0.08,
+      "source": "user"
+    },
+    "hind_foot": {
+      "value": 0.21,
+      "tol": 0.08,
+      "source": "lit"
+    },
+    "croup_height": {
+      "value": 0.43,
+      "tol": 0.08,
+      "source": "design-photo",
+      "_doc": "Etapa 2: revisado de 0.405 a 0.430 (foto lateral: grupa casi a la altura del lomo, redondeada)."
+    },
+    "chest_depth": {
+      "value": 0.225,
+      "tol": 0.08,
+      "source": "design"
+    },
+    "belly_clearance": {
+      "value": 0.225,
+      "tol": 0.08,
+      "source": "design-photo",
+      "_doc": "Etapa 2: revisado de 0.190 (estimacion de la etapa 1, ~45% de la cruz) a 0.225 a partir de la foto lateral (vientre con flecos a ~0.20 m + 3.5 cm de pelo, a la escala alineada). Ver iteration_log."
+    },
+    "body_width": {
+      "value": 0.215,
+      "tol": 0.08,
+      "source": "design"
+    },
+    "head_width": {
+      "value": 0.115,
+      "tol": 0.08,
+      "source": "lit"
+    },
+    "disc_width": {
+      "value": 0.046,
+      "tol": 0.08,
+      "source": "design"
+    },
+    "eye_diameter": {
+      "value": 0.017,
+      "tol": 0.08,
+      "source": "design"
+    },
+    "canine_exposed": {
+      "value": 0.013,
+      "tol": 0.1,
+      "source": "design"
+    },
+    "mass_kg": {
+      "value": 22.0,
+      "tol": 0.25,
+      "source": "lit"
+    }
+  },
+  "landmarks": {
+    "_doc": "Puntos guia para localizar medidas sobre la malla (marco de diseno).",
+    "withers_y": -0.085,
+    "croup_y": 0.23,
+    "tail_base": [0.0, 0.34, 0.36],
+    "front_leg_y": -0.08,
+    "hind_leg_y": 0.26,
+    "body_width_zmin": 0.28,
+    "leg_zmax_front": 0.235,
+    "leg_zmax_hind": 0.275,
+    "hoof_top_z": 0.022
+  },
+  "body": {
+    "_doc": "Barrido de secciones superelipticas a lo largo de Y. stations: [y, z_lomo, z_vientre, semiancho, frac_altura_max_ancho, exponente].",
+    "stations": [
+      [-0.3, 0.42, 0.222, 0.048, 0.5, 2.2],
+      [-0.265, 0.435, 0.224, 0.06, 0.5, 2.2],
+      [-0.22, 0.442, 0.228, 0.072, 0.5, 2.3],
+      [-0.16, 0.451, 0.226, 0.083, 0.48, 2.3],
+      [-0.1, 0.452, 0.227, 0.092, 0.46, 2.4],
+      [-0.03, 0.449, 0.226, 0.098, 0.45, 2.4],
+      [0.04, 0.444, 0.228, 0.099, 0.46, 2.4],
+      [0.11, 0.44, 0.238, 0.095, 0.48, 2.4],
+      [0.17, 0.434, 0.256, 0.09, 0.5, 2.4],
+      [0.23, 0.422, 0.275, 0.085, 0.52, 2.3],
+      [0.28, 0.402, 0.29, 0.076, 0.55, 2.2],
+      [0.315, 0.38, 0.302, 0.06, 0.57, 2.1],
+      [0.338, 0.356, 0.315, 0.036, 0.57, 2.0]
+    ],
+    "cap_front": 0.015,
+    "cap_rear": 0.012,
+    "ellipsoids": [
+      {
+        "_doc": "pecho / manubrio esternal",
+        "c": [0.0, -0.17, 0.258],
+        "r": [0.04, 0.035, 0.04],
+        "k": 0.03
+      },
+      {
+        "_doc": "masa del hombro (escapula, triceps)",
+        "c": [0.05, -0.09, 0.355],
+        "r": [0.03, 0.065, 0.075],
+        "k": 0.03,
+        "mirror": true
+      },
+      {
+        "_doc": "grupa / gluteos (redondea los cuartos traseros)",
+        "c": [0.05, 0.262, 0.335],
+        "r": [0.04, 0.068, 0.07],
+        "k": 0.035,
+        "mirror": true
+      }
+    ],
+    "ground_k": 0.0025,
+    "cage": {
+      "rings_y": [-0.3, -0.262, -0.222, -0.18, -0.14, -0.1, -0.04, 0.02, 0.08, 0.135, 0.18, 0.29, 0.322, 0.345],
+      "nring": 12,
+      "inflate": 1.06,
+      "cap_front": {
+        "a": 2,
+        "b": 4,
+        "dome": 0.004
+      },
+      "cap_rear": {
+        "a": 2,
+        "b": 4,
+        "dome": 0.006
+      }
+    },
+    "subdiv": 2,
+    "project_iters": 10,
+    "relax_iters": 6,
+    "relax_lambda": 0.3,
+    "crease_relax_iters": 24,
+    "crease_lap": 10.0
+  },
+  "legs": {
+    "_doc": "Pata izquierda (+X); se refleja. segments: [desde, hasta, radio_desde, radio_hasta, k_union]; ellipsoids: [centro, radios, k]; cage: anillos de 4 vertices [centro, semiancho_x, semiancho_y]. Los puntos son nombres de skeleton o {lerp:[a,b,t]}. root_ring auto = anillo de la jaula del cuerpo que encierra al primer anillo de la pata.",
+    "front": {
+      "root_ring": "auto",
+      "k_body": 0.028,
+      "segments": [
+        ["shoulder", "elbow", 0.04, 0.03, 0.012],
+        ["elbow", "carpus", 0.027, 0.0165, 0.008],
+        ["carpus", "fetlock_f", 0.0125, 0.0115, 0.006],
+        ["fetlock_f", "coronet_f", 0.0118, 0.0128, 0.004],
+        ["hoof_back_f", "toe_f", 0.0135, 0.006, 0.003]
+      ],
+      "ellipsoids": [
+        [
+          "olecranon",
+          [0.015, 0.019, 0.022],
+          0.01
+        ],
+        [
+          "carpus",
+          [0.0165, 0.018, 0.0155],
+          0.006
+        ],
+        [
+          "fetlock_f",
+          [0.0135, 0.015, 0.0135],
+          0.004
+        ],
+        [
+          "heel_f",
+          [0.0115, 0.011, 0.0095],
+          0.004
+        ]
+      ],
+      "cage": [
+        [
+          {
+            "lerp": ["elbow", "carpus", 0.28]
+          },
+          0.03,
+          0.034
+        ],
+        ["carpus", 0.02, 0.022],
+        [
+          {
+            "lerp": ["carpus", "fetlock_f", 0.5]
+          },
+          0.015,
+          0.015
+        ],
+        ["fetlock_f", 0.016, 0.017],
+        ["coronet_f", 0.017, 0.021],
+        ["sole_f", 0.015, 0.024]
+      ]
+    },
+    "hind": {
+      "root_ring": "auto",
+      "k_body": 0.028,
+      "segments": [
+        ["hip", "stifle", 0.05, 0.036, 0.014],
+        ["stifle", "hock", 0.03, 0.016, 0.01],
+        [
+          [0.055, 0.276, 0.292],
+          "calcaneus",
+          0.028,
+          0.0125,
+          0.012
+        ],
+        ["hock", "fetlock_h", 0.0125, 0.0115, 0.006],
+        ["fetlock_h", "coronet_h", 0.0118, 0.0125, 0.004],
+        ["hoof_back_h", "toe_h", 0.013, 0.006, 0.003]
+      ],
+      "ellipsoids": [
+        [
+          {
+            "lerp": ["hock", "calcaneus", 0.3]
+          },
+          [0.016, 0.026, 0.021],
+          0.008
+        ],
+        [
+          "stifle",
+          [0.024, 0.026, 0.028],
+          0.012
+        ],
+        [
+          "fetlock_h",
+          [0.0135, 0.015, 0.0135],
+          0.004
+        ],
+        [
+          "heel_h",
+          [0.011, 0.0105, 0.0092],
+          0.004
+        ]
+      ],
+      "cage": [
+        [
+          [0.064, 0.24, 0.212],
+          0.03,
+          0.048
+        ],
+        [
+          {
+            "lerp": ["hock", "calcaneus", 0.45]
+          },
+          0.02,
+          0.036
+        ],
+        [
+          {
+            "lerp": ["hock", "fetlock_h", 0.5]
+          },
+          0.015,
+          0.016
+        ],
+        ["fetlock_h", 0.016, 0.017],
+        ["coronet_h", 0.017, 0.02],
+        ["sole_h", 0.015, 0.024]
+      ]
+    }
+  },
+  "head": {
+    "_doc": "Marco canonico: disco nasal en u=0, u (= +Y) hacia atras, z arriba. stations: [u, z_dorso, z_labio, semiancho, frac_altura, exponente].",
+    "pitch_deg": 22.0,
+    "nuchal_can": [0.0, 0.228, 0.088],
+    "nuchal_world": [0.0, -0.255, 0.435],
+    "stations": [
+      [-0.004, 0.02, -0.0185, 0.025, 0.5, 2.6],
+      [0.0, 0.02, -0.0185, 0.025, 0.5, 2.6],
+      [0.015, 0.0235, -0.0205, 0.0262, 0.5, 2.5],
+      [0.045, 0.0325, -0.0235, 0.0285, 0.5, 2.4],
+      [0.08, 0.0455, -0.026, 0.033, 0.52, 2.3],
+      [0.115, 0.062, -0.03, 0.0395, 0.52, 2.3],
+      [0.15, 0.077, -0.039, 0.0485, 0.52, 2.3],
+      [0.18, 0.088, -0.048, 0.055, 0.5, 2.2],
+      [0.205, 0.092, -0.052, 0.056, 0.5, 2.2],
+      [0.228, 0.088, -0.046, 0.053, 0.5, 2.2],
+      [0.255, 0.072, -0.03, 0.046, 0.5, 2.2]
+    ],
+    "cap_front": 0.004,
+    "cap_back": 0.022,
+    "disc_u": 0.0,
+    "disc_round": 0.0045,
+    "ellipsoids": [
+      {
+        "_doc": "ensanchamiento canino del maxilar",
+        "c": [0.022, 0.05, -0.007],
+        "r": [0.01, 0.02, 0.014],
+        "k": 0.012
+      },
+      {
+        "_doc": "masetero / mejilla: cubre la rama de la mandibula",
+        "c": [0.036, 0.165, -0.02],
+        "r": [0.019, 0.042, 0.03],
+        "k": 0.02
+      },
+      {
+        "_doc": "arco cigomatico",
+        "c": [0.042, 0.178, 0.014],
+        "r": [0.013, 0.035, 0.016],
+        "k": 0.015
+      },
+      {
+        "_doc": "reborde supraorbitario (frente que sube hacia las orejas)",
+        "c": [0.028, 0.142, 0.062],
+        "r": [0.014, 0.022, 0.008],
+        "k": 0.016
+      }
+    ],
+    "subtract": [
+      {
+        "_doc": "narinas (hoyuelos)",
+        "c": [0.0095, -0.003, 0.001],
+        "r": [0.0045, 0.006, 0.0065],
+        "k": 0.0015
+      }
+    ],
+    "cage": {
+      "rings_u": [0.0, 0.015, 0.05, 0.09, 0.13, 0.165, 0.2, 0.23, 0.255],
+      "nring": 12,
+      "inflate": 1.05,
+      "cap_front": {
+        "a": 4,
+        "b": 2,
+        "dome": -0.001
+      },
+      "cap_back": {
+        "a": 2,
+        "b": 4,
+        "dome": 0.01
+      }
+    },
+    "subdiv": 2,
+    "project_iters": 10,
+    "relax_iters": 12,
+    "relax_lambda": 0.45,
+    "mouth_corner": {
+      "u": 0.08,
+      "z": -0.0225
+    },
+    "inset_eye": [0.0016, 0.0014],
+    "inset_mouth": [0.0016, 0.0014]
+  },
+  "jaw": {
+    "_doc": "Mandibula en el mismo marco canonico de la cabeza. stations: [u, z_sup (oculto dentro de la cabeza), z_inf, semiancho, frac_altura, exponente].",
+    "stations": [
+      [0.012, -0.013, -0.031, 0.0175, 0.55, 2.3],
+      [0.04, -0.013, -0.0385, 0.021, 0.55, 2.3],
+      [0.08, -0.014, -0.048, 0.025, 0.55, 2.3],
+      [0.12, -0.016, -0.06, 0.03, 0.55, 2.3],
+      [0.155, -0.018, -0.07, 0.034, 0.55, 2.3],
+      [0.18, -0.02, -0.074, 0.035, 0.55, 2.3],
+      [0.2, -0.024, -0.068, 0.033, 0.55, 2.3]
+    ],
+    "cap_front": 0.01,
+    "cap_back": 0.016,
+    "ellipsoids": [
+      {
+        "_doc": "proceso angular ancho",
+        "c": [0.028, 0.178, -0.058],
+        "r": [0.01, 0.024, 0.016],
+        "k": 0.012
+      }
+    ],
+    "cage": {
+      "rings_u": [0.012, 0.045, 0.085, 0.125, 0.158, 0.182, 0.2],
+      "nring": 8,
+      "inflate": 1.06,
+      "cap_front": {
+        "a": 2,
+        "b": 2,
+        "dome": 0.006
+      },
+      "cap_back": {
+        "a": 2,
+        "b": 2,
+        "dome": 0.012
+      }
+    },
+    "subdiv": 2,
+    "project_iters": 10,
+    "relax_iters": 10,
+    "relax_lambda": 0.45
+  },
+  "eye": {
+    "_doc": "Ojo izquierdo en marco canonico de cabeza; el centro se hunde 'depth' bajo la superficie a lo largo de la normal.",
+    "u": 0.14,
+    "z": 0.058,
+    "radius": 0.0085,
+    "depth": 0.0055,
+    "socket_gap": 0.0006,
+    "socket_k": 0.0022,
+    "socket_scale": [1.0, 1.15, 0.92],
+    "cube_cuts": 3
+  },
+  "ear": {
+    "_doc": "Oreja izquierda. Base sobre la superficie de la cabeza (rayo desde la linea media en (u, z0) con angulo 'ray_deg' desde la vertical). dir_world: eje de la oreja (afuera, atras, arriba). back_world: hacia donde mira el dorso convexo. Perfiles a lo largo de t (fraccion de 'length').",
+    "u": 0.214,
+    "z0": 0.05,
+    "ray_deg": 28.0,
+    "sink": 0.007,
+    "length": 0.08,
+    "dir_world": [0.5, 0.22, 1.0],
+    "back_world": [-0.35, 1.0, 0.25],
+    "t": [-0.1, 0.0, 0.25, 0.5, 0.72, 0.88, 0.98],
+    "half_width": [0.021, 0.0245, 0.0262, 0.0245, 0.0205, 0.015, 0.0075],
+    "back_bulge": [0.0125, 0.011, 0.0085, 0.0062, 0.0046, 0.0034, 0.0022],
+    "cup": [0.006, 0.0085, 0.0092, 0.0078, 0.0058, 0.0038, 0.0018],
+    "front_thick": 0.0016,
+    "bend": 0.006,
+    "nring": 12,
+    "subdiv": 1
+  },
+  "canine": {
+    "_doc": "Canino superior izquierdo en marco canonico de la cabeza. Raiz dentro del labio; dir_can apunta hacia abajo (ligeramente adelante para compensar la inclinacion de la cabeza y quedar casi vertical en el mundo).",
+    "u": 0.056,
+    "z": -0.01,
+    "inset": 0.0045,
+    "dir_can": [0.1, -0.18, -1.0],
+    "length": 0.021,
+    "t": [0.0, 0.35, 0.6, 0.8, 0.93, 1.0],
+    "radius": [0.0042, 0.0041, 0.0036, 0.0027, 0.0016, 0.0007],
+    "flatten": 0.8,
+    "nring": 8
+  },
+  "vertex_groups": {
+    "_doc": "Reglas de pesos (0..1) para el pelaje de la siguiente etapa.",
+    "fur_mane": {
+      "objects": ["Pecari_Body", "Pecari_Head"],
+      "rule": "dorsal_band",
+      "y_range": [-0.3, 0.345],
+      "ramp": 0.03,
+      "half_width": [
+        [-0.3, 0.022],
+        [-0.22, 0.035],
+        [-0.1, 0.045],
+        [0.15, 0.04],
+        [0.3, 0.028],
+        [0.345, 0.018]
+      ],
+      "edge": 0.014,
+      "nz_min": 0.25
+    },
+    "fur_collar": {
+      "objects": ["Pecari_Body"],
+      "rule": "plane_band",
+      "p0": [-0.09, 0.45],
+      "p1": [-0.25, 0.23],
+      "half_width": 0.02,
+      "edge": 0.012
+    },
+    "fur_belly": {
+      "objects": ["Pecari_Body"],
+      "rule": "ventral",
+      "y_range": [-0.1, 0.2],
+      "ramp": 0.03,
+      "nz_max": -0.35,
+      "edge": 0.25
+    },
+    "fur_legs": {
+      "objects": ["Pecari_Body"],
+      "rule": "legs"
+    },
+    "bare_hooves": {
+      "objects": ["Pecari_Body"],
+      "rule": "hooves",
+      "edge": 0.004
+    },
+    "fur_face": {
+      "objects": ["Pecari_Head", "Pecari_LowerJaw", "Pecari_EarL", "Pecari_EarR"],
+      "rule": "face"
+    },
+    "bare_snout": {
+      "objects": ["Pecari_Head"],
+      "rule": "disc",
+      "u_full": 0.0035,
+      "u_zero": 0.01
+    }
+  },
+  "fur": {
+    "_doc": "Grosor aparente del pelaje (m) sobre la piel. Solo se usa para comparar siluetas con fotos (la malla es piel) y como punto de partida de la etapa de pelaje. Estimado en la foto lateral: patas ~0.5 cm por lado (cana 3.1-3.5 cm con pelo frente a 2.4 cm de piel), flancos ~2 cm, flecos del vientre ~3.5 cm, crin ~7.5 cm (cerdas que sobresalen 60-80 px de la capa densa a la escala alineada). No se optimiza.",
+    "body": 0.02,
+    "mane": 0.075,
+    "belly": 0.035,
+    "legs": 0.005,
+    "face": 0.01,
+    "crown": 0.025,
+    "ears": 0.003
+  },
+  "render": {
+    "resolution": 1024,
+    "samples": 96,
+    "clay_color": [0.55, 0.55, 0.55],
+    "eye_color": [0.06, 0.06, 0.06],
+    "tooth_color": [0.8, 0.78, 0.72],
+    "background": [0.22, 0.22, 0.24],
+    "ground_color": [0.3, 0.3, 0.3],
+    "exposure": -0.6,
+    "key_w": 90,
+    "fill_w": 8,
+    "rim_w": 70,
+    "ambient": 0.015,
+    "fill": 0.88,
+    "_doc": "Arcilla: fondo gris oscuro y relacion key/fill alta para leer el volumen; exposicion -0.6 EV. El animal ocupa ~88% del lado mayor del cuadro."
+  },
+  "skeleton": {
+    "_doc": "Articulaciones (centros oseos) del lado izquierdo en el marco de diseno. Esquema de ungulado: humero atras-abajo, antebrazo vertical; femur adelante-abajo, tibia atras-abajo, metatarso casi vertical con el pie bajo la cadera. Los puntos de columna y craneo se exportan a export/landmarks.json.",
+    "scapula": [0.045, -0.07, 0.4],
+    "shoulder": [0.06, -0.13, 0.3],
+    "elbow": [0.058, -0.07, 0.215],
+    "olecranon": [0.057, -0.047, 0.224],
+    "carpus": [0.05, -0.075, 0.11],
+    "fetlock_f": [0.05, -0.077, 0.045],
+    "coronet_f": [0.05, -0.085, 0.022],
+    "hoof_back_f": [0.05, -0.081, 0.0135],
+    "toe_f": [0.05, -0.107, 0.006],
+    "heel_f": [0.05, -0.07, 0.0095],
+    "sole_f": [0.05, -0.088, 0.0],
+    "hip": [0.065, 0.23, 0.35],
+    "stifle": [0.07, 0.18, 0.235],
+    "hock": [0.058, 0.287, 0.172],
+    "calcaneus": [0.058, 0.312, 0.205],
+    "fetlock_h": [0.055, 0.27, 0.045],
+    "coronet_h": [0.055, 0.262, 0.021],
+    "hoof_back_h": [0.055, 0.258, 0.013],
+    "toe_h": [0.055, 0.23, 0.006],
+    "heel_h": [0.055, 0.273, 0.0092],
+    "sole_h": [0.055, 0.252, 0.0],
+    "spine_withers": [0.0, -0.1, 0.4],
+    "spine_loin": [0.0, 0.08, 0.395],
+    "spine_croup": [0.0, 0.23, 0.385],
+    "tail_base": [0.0, 0.34, 0.355],
+    "spine_neck": [0.0, -0.23, 0.36]
+  }
+}

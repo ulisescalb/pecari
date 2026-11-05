@@ -231,6 +231,11 @@ def evaluate_mesh(npz_path, out_dir=None, scale=0.5, fur=True, refs=None):
         if out_dir:
             overlay(ref, m, os.path.join(out_dir, "iou_%s.png" % view),
                     "%s  IoU=%.3f (piel+pelo)  piel sola=%.3f" % (view, res[view], res[view + "_skin_only"]))
+    # diagnostico: IoU solo por encima de 0.22 m (tronco y cabeza; las patas de la foto van en paso)
+    ref = refs["side"]
+    cut = int((align.side_ground - 0.22 / align.s_side) * ref.scale)
+    ms = mesh_silhouette(objs, align, ref)
+    res["side_upper_z022"] = iou(ms[:cut], ref.mask[:cut])
     # diagnostico: altura normalizada (separa "forma" de "proporcion largo/alto")
     hm = max(float((d["V"] + d["N"] * d["T"][:, None])[:, 2].max()) for d in objs.values())
     res["model_height_m"] = hm

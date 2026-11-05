@@ -43,7 +43,7 @@ EAR_FACTOR = 0.9125     # oreja medida en la malla / parametro length (CC nivel 
 FRONT_JOINTS = ["scapula", "shoulder", "elbow", "olecranon", "carpus", "fetlock_f", "coronet_f",
                 "hoof_back_f", "toe_f", "heel_f", "sole_f"]
 HIND_JOINTS = ["hip", "stifle", "hock", "calcaneus", "fetlock_h", "coronet_h", "hoof_back_h",
-               "toe_h", "heel_h", "sole_h"]
+               "toe_h", "heel_h", "sole_h", "hamstring_top", "gaskin_ring"]
 
 
 # ----------------------------------------------------------------------------
@@ -64,7 +64,7 @@ def param_space(P):
            ("jaw.sz", "mul", 0.80, 1.10),
            ("ear.length", "add", -0.008, 0.006), ("ear.dx", "add", -0.3, 0.2), ("ear.dy", "add", -0.15, 0.25),
            ("ear.u", "add", -0.015, 0.012),
-           ("front.dy", "add", -0.04, 0.04), ("hind.dy", "add", -0.04, 0.04)]
+           ("front.dy", "add", -0.03, 0.03), ("hind.dy", "add", -0.02, 0.02)]
     return sp
 
 
@@ -244,6 +244,7 @@ def main():
     ap.add_argument("--evals", type=int, default=600)
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--sigma", type=float, default=0.3)
+    ap.add_argument("--tag", default="")
     ap.add_argument("--write", action="store_true")
     ap.add_argument("--params", default=os.path.join(SRC, "params.json"))
     ap.add_argument("--seed", type=int, default=7)
@@ -265,7 +266,7 @@ def main():
                                                     r0["pen"], r0["viol"]), flush=True)
     es = cma.CMAEvolutionStrategy(x0n, a.sigma, {"bounds": [0, 1], "seed": a.seed, "maxfevals": a.evals,
                                                  "verb_disp": 0, "popsize": 16})
-    log = open(os.path.join(OUT, "fit_log.csv"), "w")
+    log = open(os.path.join(OUT, "fit_log%s.csv" % a.tag), "w")
     log.write("eval,gen,f,score,iou_side,iou_front,penalty,violations\n")
     best = (r0["f"], base, r0)
     ne = 0
@@ -295,12 +296,12 @@ def main():
                "best": {"score": rb["score"], "iou": rb["iou"], "penalty": rb["pen"], "violations": rb["viol"],
                         "measures_sdf": rb["M"]},
                "params": {s[0]: float(v) for s, v in zip(sp, xb)}}
-    json.dump(summary, open(os.path.join(OUT, "fit_summary.json"), "w"), indent=1)
+    json.dump(summary, open(os.path.join(OUT, "fit_summary%s.json" % a.tag), "w"), indent=1)
     # superposiciones del mejor (resolucion de informe)
     res, _, _ = SIL.evaluate_model(Pb, h=0.004, scale=0.5, out_dir=OUT)
     print("mejor (rejilla 4 mm): %s" % {k: round(v, 4) for k, v in res.items() if k in ("side", "front")})
     if a.write:
-        jsonfmt.dump(P0, os.path.join(OUT, "params_before_fit.json"))
+        jsonfmt.dump(P0, os.path.join(OUT, "params_before_fit%s.json" % a.tag))
         jsonfmt.dump(Pb, a.params)
         print("params.json actualizado")
 
