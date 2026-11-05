@@ -574,3 +574,119 @@ para que se pueda juzgar.
    ajuste 1 y los anillos automáticos da **0,935**, frente a 0,840 en total. La diferencia está
    casi toda en las patas: la foto está en mitad del paso (una pata trasera adelantada y otra
    atrás) y el modelo está en pose neutra simétrica.
+
+- **Ajuste 2** (`fit/fit_log_r2.csv`, `fit/fit_summary_r2.json`, 1008 evaluaciones, 12 min, σ = 0,15,
+  con suavidad):
+  - Puntuación 0,803 → 0,821. IoU SDF lateral 0,850 y frontal 0,777. Suavidad 0,006 (lomo liso),
+    sin violaciones.
+  - Cambios principales: cabeza +5,6° más inclinada y nuca 2,3 cm más alta y 2,5 cm más adelante;
+    cráneo un 6 % más alto, mandíbula un 7 % más profunda; hombros más llenos; orejas más abiertas
+    y algo hacia delante.
+
+### v08 — iteración 3 (render completo con el ajuste 2)
+
+- Retoque a mano antes del render: barbilla más atrás y más estrecha, para que la mandíbula quede
+  bajo el labio superior.
+- IoU de la malla: **lateral 0,848**, **frontal 0,811**, lateral por encima de 0,22 m **0,943**.
+  GLB idéntico.
+- Problemas:
+  - **68 autointersecciones**, todas en la línea media bajo la grupa: los dos glúteos y las corvas
+    dejan un surco profundo en el perineo.
+  - `belly_clearance` −9,3 %: la medida del SDF (0,21) era más optimista que la de la malla
+    (0,204).
+- Crítica: el lomo ya es liso y la silueta encaja. Quedan:
+  - "bocio" bajo la garganta (el elipsoide del pecho sobresale delante del cuello);
+  - bultos en la corva y el corvejón;
+  - orejas que de frente siguen pareciendo paletas;
+  - mandíbula visible como un rollo.
+
+**Correcciones** (sin optimizador, cada una comprobada con build sin render, IoU y medidas):
+- Volumen nuevo **perineo** en la línea media (rellena el surco): 68 → 6 autointersecciones.
+- Línea ventral del pecho y del vientre +1 cm (`belly_clearance` vuelve a −4,8 %).
+- Isquiotibiales: radio superior 0,028 → 0,024 y unión más suave (k = 0,016) → **0
+  autointersecciones**.
+- Pecho 3 cm más atrás y más pequeño, garganta +6 mm (menos papo); corvejón menos abultado.
+- Orejas: algo más estrechas, con concha más profunda (cup 1,1 cm) y borde más grueso.
+
+### v09 — iteración 4 (versión final de esta etapa)
+
+`python src/build_pecari.py --version v09 --lods` (equivale a
+`blender -b -P src/build_pecari.py -- --version v09 --lods`).
+
+**Silueta** (malla con pelaje, `renders/v09/iou_side.png`, `iou_front.png`):
+
+| | v05 (inicio de la etapa) | v06 | v07 | v08 | **v09** |
+|---|---:|---:|---:|---:|---:|
+| IoU lateral | 0,523 | 0,831 | 0,854 | 0,848 | **0,850** |
+| IoU frontal | 0,609 | 0,797 | 0,807 | 0,811 | **0,809** |
+| IoU lateral sobre 0,22 m (tronco + cabeza) | — | — | — | 0,943 | **0,941** |
+| autointersecciones | 0 | 10 | 61 | 68 | **0** |
+
+**Medidas** (todas dentro de ±8 %):
+
+| medida | objetivo | v09 | error |
+|---|---:|---:|---:|
+| HB | 0,900 m | 0,890 m | −1,1 % |
+| cruz | 0,420 m | 0,440 m | +4,7 % |
+| largo de cabeza | 0,230 m | 0,232 m | +1,1 % |
+| cabeza/HB | 0,255 | 0,261 | +2,4 % |
+| oreja | 0,075 m | 0,076 m | +1,0 % |
+| pie trasero | 0,210 m | 0,196 m | −6,7 % |
+| grupa | 0,430 m | 0,423 m | −1,7 % |
+| pecho | 0,225 m | 0,227 m | +1,1 % |
+| altura libre bajo el vientre | 0,225 m | 0,214 m | −4,8 % |
+| ancho del cuerpo | 0,215 m | 0,229 m | +6,3 % |
+| ancho de cabeza | 0,115 m | 0,118 m | +2,3 % |
+| disco | 0,046 m | 0,045 m | −1,1 % |
+| ojo | 0,017 m | 0,017 m | 0,0 % |
+| canino expuesto | 0,013 m | 0,013 m | −2,9 % |
+| **masa** (volumen de la unión real) | 22 kg | **22,7 kg** | +3,4 % |
+
+**Malla y entregables**:
+- **7904 quads** (cuerpo 4096, cabeza 1888, mandíbula 928, orejas 2×352, ojos 2×96, caninos 2×48).
+  Por debajo del presupuesto; no hizo falta subir a 12k.
+- 0 triángulos y 0 n-gons; las 9 piezas son manifold, sin bordes, sin vértices sueltos, con
+  normales coherentes hacia fuera y **0 autointersecciones**.
+- GLB reimportado **idéntico**: mismos vértices (< 1e-5 m) y triángulos = 2 × quads, en las
+  9 piezas.
+- `export/landmarks.json`: 60 puntos + huesos; esquema de patas de ungulado = OK.
+- LODs por decimación con simetría X (`blend/pecari_v09_lod1.glb`, `_lod2.glb`):
+
+  | LOD | triángulos | IoU de silueta frente a LOD0 (lateral / frontal) |
+  |---|---:|---:|
+  | LOD0 | 15 808 | — |
+  | LOD1 | 5 046 | 0,997 / 0,993 |
+  | LOD2 | 1 570 | 0,986 / 0,978 |
+
+- Grupos de pelaje recolocados para la nueva anatomía (`groups_three_quarter.png`): la crin
+  recorre la nuca y el lomo, el collar es oblicuo de la cruz a la garganta, y el vientre, las
+  patas, las pezuñas, el disco y la cara quedan en su sitio.
+
+**Crítica final honesta**:
+- *Perfil*: es la vista que más mejoró. Cruz alta, lomo liso con arco suave, tronco compacto,
+  grupa redondeada, pata trasera con el zigzag correcto y pie bajo la cadera, cabeza en cuña
+  inclinada con disco truncado y caninos rectos. Tronco y cabeza coinciden con la foto en un
+  94 %.
+- *Criterios de IoU **no cumplidos***: lateral 0,850 frente a 0,90 pedido y frontal 0,809
+  frente a 0,85. Por qué:
+  1. La foto está en mitad del paso y el modelo en pose neutra simétrica. Solo las patas explican
+     casi toda la diferencia lateral (0,94 frente a 0,85).
+  2. La cabeza de la foto es ~25 % mayor respecto al cuerpo de lo que permite la bibliografía
+     (`head_length` ±8 %, `head_hb_ratio` ≤ 0,275). No cambié esos objetivos.
+  3. El pelaje es un desplazamiento suave: no imita las cerdas erizadas ni los mechones de las
+     mejillas y las orejas que ensanchan la silueta frontal de la foto.
+- *3/4 y frente*: todavía no se lee del todo como pecarí. Lo que falla:
+  - las orejas, finas y grandes vistas de frente;
+  - la cabeza, larga y estrecha de frente en arcilla (sin el pelo de las mejillas que la ensancha
+    en la foto);
+  - la mandíbula, que se nota como pieza aparte;
+  - un pequeño abultamiento bajo la garganta;
+  - bultos en la corva y el corvejón.
+- Lo siguiente que haría:
+  1. Una vista superior y una frontal adicionales de referencia (o una foto 3/4 calibrada) para
+     ajustar el ancho, que hoy solo se controla con una vista.
+  2. Modelar las orejas como concha de grosor variable sobre su propio SDF.
+  3. Fusionar visualmente la mandíbula, con un labio inferior mínimo bajo un labio superior que
+     sobresalga 4–5 mm.
+  4. Ajuste opcional de pose (patas en paso) solo para medir la IoU, sin cambiar la pose neutra
+     del asset.
