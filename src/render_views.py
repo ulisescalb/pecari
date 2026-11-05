@@ -187,6 +187,9 @@ def add_area(name, loc, target, power, size):
     return o
 
 
+LIGHT_W = {"key": 90.0, "fill": 8.0, "rim": 70.0}
+
+
 def three_point(target, cam_dir, dist=3.0, scale=1.0):
     """Luz de tres puntos relativa a la direccion de camara (vector camara->objetivo)."""
     clear_lights()
@@ -202,9 +205,9 @@ def three_point(target, cam_dir, dist=3.0, scale=1.0):
     fill = t + (back * 0.9 + right * 0.9 + upv * 0.2).normalized() * dist
     rim = t + (f * 0.9 + right * 0.35 + upv * 1.0).normalized() * dist
     p = (dist / 3.0) ** 2 * scale
-    add_area("Key", key, t, 80 * p, 1.6)
-    add_area("Fill", fill, t, 14 * p, 2.0)
-    add_area("Rim", rim, t, 55 * p, 1.2)
+    add_area("Key", key, t, LIGHT_W["key"] * p, 1.6)
+    add_area("Fill", fill, t, LIGHT_W["fill"] * p, 2.0)
+    add_area("Rim", rim, t, LIGHT_W["rim"] * p, 1.2)
 
 
 def camera(name, loc, target=None, rot=None, ortho=None, lens=50.0):
@@ -228,6 +231,31 @@ def camera(name, loc, target=None, rot=None, ortho=None, lens=50.0):
     cd.clip_end = 50
     bpy.context.scene.camera = o
     return o
+
+
+def fit_distance(V, target, direction, lens, fill, sensor=36.0):
+    """Distancia de camara (perspectiva, cuadro cuadrado) para que la nube V ocupe 'fill'
+    del lado mayor del cuadro, mirando a 'target' desde 'target + direction * d'."""
+    f = -Vector(direction).normalized()
+    up = Vector((0, 0, 1))
+    right = f.cross(up).normalized()
+    upv = right.cross(f).normalized()
+    t = np.array(target[:])
+    Q = np.asarray(V, float) - t
+    a = Q @ np.array(right[:])
+    b = Q @ np.array(upv[:])
+    c = Q @ np.array(f[:])
+    half = (sensor / 2.0) / lens * fill
+    lo_d, hi_d = 0.05, 20.0
+    for _ in range(60):
+        d = 0.5 * (lo_d + hi_d)
+        depth = d + c
+        m = np.max(np.maximum(np.abs(a), np.abs(b)) / np.maximum(depth, 1e-3))
+        if m > half:
+            lo_d = d
+        else:
+            hi_d = d
+    return hi_d
 
 
 def ground(color):
@@ -290,7 +318,8 @@ def render_all(objs, out_dir, R, args=None, info=None):
         scene.view_settings.look = "None"
     except Exception:
         pass
-    scene.view_settings.exposure = 0.0
+    scene.view_settings.exposure = R.get("exposure", 0.0)
+    LIGHT_W.update({"key": R.get("key_w", 90.0), "fill": R.get("fill_w", 8.0), "rim": R.get("rim_w", 70.0)})
 
     clay = principled("RV_clay", R["clay_color"], 0.62, 0.22)
     eye = principled("RV_eye", R["eye_color"], 0.25, 0.5)
@@ -305,7 +334,7 @@ def render_all(objs, out_dir, R, args=None, info=None):
     head_c = Vector(info["head_center"]) if info and "head_center" in info else Vector(ctr)
 
     gnd = ground(R["ground_color"])
-    setup_world(scene, R["background"])
+    setup_world(scene, R["background"], ambient=R.get("ambient", 0.015))
     out = {}
 
     def shoot(name):
@@ -316,27 +345,35 @@ def render_all(objs, out_dir, R, args=None, info=None):
         print("[render]", name, flush=True)
 
     D = 5.0
+    fill = R.get("fill", 0.88)       # fraccion del cuadro que ocupa la dimension mayor del animal
+    ext = hi - lo
     # frente (mira hacia +Y)
-    camera("front", (0, ctr[1] - D, zc), rot=(math.radians(90), 0, 0), ortho=R["ortho_front"])
+    camera("front", (0, ctr[1] - D, zc), rot=(math.radians(90), 0, 0),
+           ortho=max(2 * max(abs(lo[0]), abs(hi[0])), ext[2]) / fill)
     three_point((0, ctr[1], zc), (0, 1, 0), 3.0)
     shoot("front")
     # lado izquierdo (+X mira hacia -X)
-    camera("side", (D, ctr[1], zc), rot=(math.radians(90), 0, math.radians(90)), ortho=R["ortho_side"])
+    side_scale = max(ext[1], ext[2]) / fill
+    camera("side", (D, ctr[1], zc), rot=(math.radians(90), 0, math.radians(90)), ortho=side_scale)
     three_point((0, ctr[1], zc), (-1, 0, 0), 3.0)
     shoot("side")
     # arriba (cabeza hacia arriba en la imagen)
-    camera("top", (0, ctr[1], D), rot=(0, 0, math.radians(180)), ortho=R["ortho_top"])
+    camera("top", (0, ctr[1], D), rot=(0, 0, math.radians(180)),
+           ortho=max(2 * max(abs(lo[0]), abs(hi[0])), ext[1]) / fill)
     three_point((0, ctr[1], 0.2), (0.25, 0.35, -1), 3.0)
     shoot("top")
     # 3/4 delantero izquierdo
     d34 = Vector((0.72, -0.62, 0.32)).normalized()
-    tgt = Vector((0, ctr[1] - 0.02, zc))
-    camera("three_quarter", tgt + d34 * 1.75, target=tgt, lens=50)
+    tgt = Vector((0, ctr[1], zc))
+    camera("three_quarter", tgt + d34 * fit_distance(V, tgt, d34, 50, fill), target=tgt, lens=50)
     three_point(tgt, -d34, 3.0)
     shoot("three_quarter")
     # primer plano de cabeza
     dh = Vector((0.62, -0.70, 0.30)).normalized()
-    camera("head", head_c + dh * 0.95, target=head_c, lens=85)
+    HV = np.vstack([np.array([v.co[:] for v in o.data.vertices]) for n, o in objs.items()
+                    if any(k in n for k in ("Head", "Jaw", "Ear", "Eye", "Canine"))])
+    head_c = Vector(0.5 * (HV.min(0) + HV.max(0)))
+    camera("head", head_c + dh * fit_distance(HV, head_c, dh, 85, fill), target=head_c, lens=85)
     three_point(head_c, -dh, 2.0)
     shoot("head")
     # silueta lateral negro sobre blanco
@@ -346,14 +383,16 @@ def render_all(objs, out_dir, R, args=None, info=None):
     for o in objs.values():
         set_material(o, blk)
     setup_world(scene, (1, 1, 1), ambient=0.0)
-    camera("side", (D, ctr[1], zc), rot=(math.radians(90), 0, math.radians(90)), ortho=R["ortho_side"])
+    camera("side", (D, ctr[1], zc), rot=(math.radians(90), 0, math.radians(90)), ortho=side_scale)
     if scene.render.engine == "CYCLES":
         scene.cycles.samples = 16
         try:
             scene.cycles.use_denoising = False
         except Exception:
             pass
+    scene.view_settings.exposure = 0.0
     shoot("silhouette_side")
+    scene.view_settings.exposure = R.get("exposure", 0.0)
     for n, o in objs.items():
         o.data.materials.clear()
         for m in saved[n]:

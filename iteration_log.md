@@ -448,3 +448,58 @@ para que se pueda juzgar.
     de la pata mide 9,6 cm de delante atrás y el del corvejón cubre el calcáneo.
 - Estos cambios se probaron con builds sin render (`vprobe`, ~9 s) y con la IoU de silueta. No
   cuentan como iteraciones de render; quedan anotados aquí.
+
+## Paso 3 — SDF anatómico
+
+**Herramientas nuevas**:
+- `pecari_sdf.AnatomyModel`: campo de piel de todo el animal (cuerpo + cabeza + mandíbula en el
+  mundo) y campo de piel + pelaje.
+- El pelaje se suma con una **transformada de distancia exacta** (scipy) sobre la rejilla de
+  ocupación: un vóxel exterior se ocupa si su distancia a la piel ≤ grosor local.
+  - Un primer intento con `d − t` sobre el SDF aproximado generó una espiga falsa en la línea media
+    (la aproximación de distancia no vale a 7,5 cm de la piel). Se descartó.
+- IoU por ocupación del SDF (rejilla de 4–6 mm, 3–9 s, sin Blender) frente a IoU de la malla: lateral
+  0,832 frente a 0,831 y frontal 0,773 frente a 0,797. Basta para optimizar; la cifra oficial
+  sigue siendo la de la malla.
+
+### v06 — iteración 1 de la etapa 2 (render completo)
+
+**Cambios respecto a la v05** (diseño a mano, guiado por la foto lateral a una escala de 0,00055 m/px):
+- Esqueleto nuevo; patas delanteras 3,5 cm más atrás que en el primer boceto (bajo la cruz).
+- Tronco más corto y alto: cruz 0,452, pecho 0,224, vientre 0,226. La grupa se redondea
+  con estaciones que se encogen (sin casquete largo), más volúmenes de hombro, pecho y glúteos.
+- Cabeza:
+  - Más inclinada (22°) y con cráneo más alto: dorso a 0,092 en u = 0,205.
+  - Masetero que tapa la rama mandibular, reborde supraorbitario, boca más corta (comisura en
+    u = 0,08).
+  - Ojos en u = 0,14, z = 0,058, más altos.
+  - Orejas en la parte superior-trasera (u = 0,214), más anchas, con base gruesa y abiertas
+    hacia fuera.
+- Pata trasera de ungulado (ver paso 2), con isquiotibiales hasta el calcáneo.
+- Comisura de la mandíbula: el parche de bucles se coloca en la **línea visible del labio
+  inferior** (el punto más alto de la cara lateral de la mandíbula que queda fuera de la cabeza),
+  ya no 1 cm por debajo.
+- Render: encuadre ajustado (el lado mayor del animal ocupa el 88 % del cuadro en todas las vistas;
+  las de perspectiva calculan la distancia por proyección).
+  - Exposición corregida después de esta versión (los renders de v06 aún salieron con el fondo
+    claro): fondo gris oscuro, key/fill 90/8 W y −0,6 EV.
+
+**Resultado** (`renders/v06/`):
+- IoU **lateral 0,831** (v05: 0,523) y **frontal 0,797** (v05: 0,609).
+- Medidas dentro de ±8 % salvo **cabeza/HB = 0,291 (+14 %)**: la cabeza de 0,243 m es grande
+  para un HB de 0,835 m.
+- 8096 quads, 0 triángulos y 10 autointersecciones en el pliegue babilla/gaskin.
+
+**Crítica**:
+- *Perfil*: ya no es tubular. La cruz está alta, la grupa redondeada y la pata trasera tiene el
+  zigzag correcto. Todavía sobran:
+  - un "papo" bajo la garganta (el cuello cuelga por delante del pecho);
+  - un escalón visible entre la nuca y la cabeza;
+  - un corvejón con bulto mientras la caña sigue muy fina.
+- *Cabeza*: la cuña existe, pero el reborde supraorbitario forma un "cuerno" sobre el ojo. La
+  mandíbula aún se distingue como pieza aparte.
+- *Frente*: las orejas son láminas planas y demasiado grandes vistas de frente (parecen de
+  murciélago), y la cabeza se ve larga y estrecha, casi equina.
+- *Cenital*: hombros anchos y grupa con bulto.
+- Lo siguiente: ajuste automático de la silueta (paso 4) y, a mano, orejas (más gruesas, en
+  concha, más pequeñas de frente), quitar el bulto de la ceja y reducir el papo.

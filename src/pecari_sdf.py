@@ -505,3 +505,140 @@ def resolve_legs(P):
         out.append({"segments": seg, "ellipsoids": ell, "cage": cage, "root_ring": root,
                     "k_body": L["k_body"], "name": key})
     return out
+
+
+# ----------------------------------------------------------------------------
+# Orejas (geometria parametrica compartida por build y silueta)
+# ----------------------------------------------------------------------------
+def ear_frame(A, side):
+    e3 = normalize(np.array(A["dir_world"], float) * np.array([side, 1, 1]))
+    back = np.array(A["back_world"], float) * np.array([side, 1, 1])
+    e2 = normalize(back - (back @ e3) * e3)          # dorso convexo
+    e1 = np.cross(e2, e3)                              # ancho
+    return e1, e2, e3
+
+
+def ear_rings(A, side, base_w):
+    """Anillos (lista de arrays (n,3)) de la oreja en el mundo; seccion en media luna."""
+    L = A["length"]
+    e1, e2, e3 = ear_frame(A, side)
+    n = A["nring"]
+    rings = []
+    for t, W, D, Cp in zip(A["t"], A["half_width"], A["back_bulge"], A["cup"]):
+        c = np.asarray(base_w, float) + e3 * (t * L) + e2 * (A["bend"] * max(t, 0) ** 2)
+        pts = []
+        for k in range(n):
+            ph = 2 * math.pi * k / n
+            cx, sy = math.cos(ph), math.sin(ph)
+            y = D * sy if sy >= 0 else (Cp - A["front_thick"]) * abs(sy)
+            pts.append(c + e1 * (W * cx) + e2 * y)
+        rings.append(np.array(pts))
+    return rings, (e1, e2, e3)
+
+
+def ear_root_can(P, head_base):
+    EAR = P["ear"]
+    a = math.radians(EAR["ray_deg"])
+    base = surface_along(head_base, [0.0, EAR["u"], EAR["z0"]], [math.sin(a), 0.0, math.cos(a)])
+    nrm = field_normal(head_base, base)
+    return base, base - nrm * EAR["sink"]
+
+
+# ----------------------------------------------------------------------------
+# Modelo completo en el mundo (marco de diseno) para siluetas y medidas rapidas
+# ----------------------------------------------------------------------------
+class AnatomyModel:
+    """Campo de piel y de 'piel + pelaje' de todo el animal en el marco de diseno
+    (suelo en z = 0). No incluye el recentrado ni global_scale (no afectan a la silueta
+    alineada). Las orejas se devuelven como nubes de puntos (envolvente convexa por vista)."""
+
+    def __init__(self, P):
+        self.P = P
+        self.legs = resolve_legs(P)
+        self.body = BodyField(P["body"], self.legs)
+        H = P["head"]
+        self.R, self.T = head_transform(H)
+        self.head = HeadField(H)
+        self.jaw = JawField(P["jaw"])
+        self.fur = P["fur"]
+        LM = P["landmarks"]
+        self.zmax_f, self.zmax_h = LM["leg_zmax_front"], LM["leg_zmax_hind"]
+        mg = P["vertex_groups"]["fur_mane"]
+        self.mane_hw = np.array(mg["half_width"], float)
+        self.mane_y = mg["y_range"]
+        bg = P["vertex_groups"]["fur_belly"]
+        self.belly_y = bg["y_range"]
+        _, root = ear_root_can(P, self.head)
+        self.ear_pts = []
+        for side in (1, -1):
+            bw = to_world(root * np.array([side, 1, 1]), self.R, self.T)
+            rings, _ = ear_rings(P["ear"], side, bw)
+            self.ear_pts.append(np.vstack(rings))
+
+    # --- piel ---
+    def skin(self, P):
+        Q = to_can(P, self.R, self.T)
+        return np.minimum(self.body(P), np.minimum(self.head(Q), self.jaw(Q)))
+
+    # --- piel + pelaje (para comparar con fotos) ---
+    def body_fur_t(self, P):
+        FU = self.fur
+        dt, dls = self.body.components(P)
+        dl = np.minimum(dls[0], dls[1])
+        zmax = np.where(P[:, 1] < 0, self.zmax_f, self.zmax_h)
+        wl = smoothstep(-0.002, 0.004, dt - dl) * (1 - smoothstep(zmax - 0.02, zmax, P[:, 2]))
+        wl = np.maximum(wl, (P[:, 2] < 0.15).astype(float))
+        ztop, zbot, w, hf, n = self.body.sweep.profile(P[:, 1])
+        zm = zbot + hf * (ztop - zbot)
+        hw = np.interp(P[:, 1], self.mane_hw[:, 0], self.mane_hw[:, 1])
+        y0, y1 = self.mane_y
+        wm = ((1 - smoothstep(hw - 0.014, hw, np.abs(P[:, 0])))
+              * smoothstep(zm + 0.2 * (ztop - zm), zm + 0.6 * (ztop - zm), P[:, 2])
+              * smoothstep(y0, y0 + 0.03, P[:, 1]) * (1 - smoothstep(y1 - 0.03, y1, P[:, 1])))
+        b0, b1 = self.belly_y
+        wb = (smoothstep(zm - 0.4 * (zm - zbot), zm - 0.8 * (zm - zbot), P[:, 2])
+              * smoothstep(b0, b0 + 0.03, P[:, 1]) * (1 - smoothstep(b1 - 0.03, b1, P[:, 1])))
+        t = FU["body"] + (FU["mane"] - FU["body"]) * wm + (FU["belly"] - FU["body"]) * wb
+        return t * (1 - wl) + FU["legs"] * wl * smoothstep(0.018, 0.026, P[:, 2])
+
+    def head_fur_t(self, Q):
+        FU = self.fur
+        t = FU["face"] + (FU["crown"] - FU["face"]) * smoothstep(0.12, 0.20, Q[:, 1]) * smoothstep(0.02, 0.06, Q[:, 2])
+        return t * smoothstep(0.003, 0.012, Q[:, 1])
+
+    def furred(self, P):
+        Q = to_can(P, self.R, self.T)
+        db = self.body(P) - self.body_fur_t(P)
+        dh = self.head(Q) - self.head_fur_t(Q)
+        dj = self.jaw(Q) - self.fur["face"]
+        return np.minimum(db, np.minimum(dh, dj))
+
+    def fur_t(self, P):
+        """Grosor de pelaje en cualquier punto (zona de la pieza mas cercana)."""
+        Q = to_can(P, self.R, self.T)
+        db = self.body(P)
+        dh = np.minimum(self.head(Q), self.jaw(Q))
+        out = np.empty(len(P))
+        mb = db <= dh
+        if mb.any():
+            out[mb] = self.body_fur_t(P[mb])
+        if (~mb).any():
+            out[~mb] = self.head_fur_t(Q[~mb])
+        return out
+
+    def ears_furred(self):
+        return self.ear_pts
+
+    def nose_y(self):
+        """Y del punto mas adelantado del disco nasal (su borde superior, por la inclinacion)."""
+        zs = np.linspace(-0.04, 0.04, 161)
+        Q = np.stack([np.zeros_like(zs), np.full_like(zs, self.P["head"]["disc_u"] + 0.0005), zs], 1)
+        ins = self.head(Q) <= 0
+        W = to_world(Q[ins], self.R, self.T)
+        return float(W[:, 1].min())
+
+    def bbox(self, pad=0.06):
+        sk = np.array([v for k, v in self.P["skeleton"].items() if not k.startswith("_")])
+        lo = np.array([0.0, self.nose_y() - 0.01, 0.0])
+        hi = np.array([0.16, self.P["body"]["stations"][-1][0] + self.P["body"]["cap_rear"] + pad, 0.62])
+        return lo, hi

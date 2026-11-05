@@ -136,6 +136,26 @@ def occupancy_grid(field, bbox_min, bbox_max, h, chunk=400000):
     return occ.reshape(X.shape), (xs, ys, zs)
 
 
+def add_fur(occ, axes, fur_t, h, tmax=0.09):
+    """Engrosa la ocupacion de piel con el grosor de pelaje fur_t(p): un voxel exterior se
+    ocupa si su distancia euclidea a la piel es <= fur_t(p) (transformada de distancia exacta,
+    incluyendo el lado reflejado x<0)."""
+    from scipy.ndimage import distance_transform_edt
+    full = np.concatenate([occ[:0:-1], occ], 0)          # x de -max a +max
+    dist = distance_transform_edt(~full) * h
+    dist = dist[occ.shape[0] - 1:]                           # mitad x>=0
+    xs, ys, zs = axes
+    cand = (~occ) & (dist <= tmax)
+    idx = np.argwhere(cand)
+    out = occ.copy()
+    if len(idx):
+        P = np.stack([xs[idx[:, 0]], ys[idx[:, 1]], zs[idx[:, 2]]], 1)
+        t = fur_t(P)
+        ok = dist[cand] <= t
+        out[tuple(idx[ok].T)] = True
+    return out
+
+
 def project_grid(occ, axes):
     xs, ys, zs = axes
     side = occ.any(axis=0)                 # (y, z)
@@ -217,6 +237,32 @@ def evaluate_mesh(npz_path, out_dir=None, scale=0.5, fur=True, refs=None):
     res["side_height_normalized"] = iou(mesh_silhouette(objs, align, refs["side"], zscale=align.height_m / hm),
                                         refs["side"].mask)
     return res
+
+
+def evaluate_model(P, refs=None, h=0.005, scale=0.25, fur=True, out_dir=None, model=None):
+    """IoU desde el SDF (sin malla ni Blender): rejilla de ocupacion -> proyecciones."""
+    sys.path.insert(0, os.path.join(ROOT, "src"))
+    from pecari_sdf import AnatomyModel
+    m = model or AnatomyModel(P)
+    refs = refs or {v: Reference(v, scale) for v in VIEWS}
+    lo, hi = m.bbox()
+    occ, axes = occupancy_grid(m.skin, lo, hi, h)
+    vol = float(occ.sum()) * h ** 3 * 2.0
+    if fur:
+        occ = add_fur(occ, axes, m.fur_t, h)
+    proj = project_grid(occ, axes)
+    tail_y = float(P["landmarks"]["tail_base"][1])
+    align = Alignment(refs, m.nose_y(), tail_y)
+    res = {"scale_m_per_px_side": align.s_side, "ref_height_m": align.height_m,
+           "volume_m3_grid": vol}
+    masks = {}
+    for view, ref in refs.items():
+        sil = grid_silhouette(proj, align, ref, polys=m.ears_furred())
+        res[view] = iou(sil, ref.mask)
+        masks[view] = sil
+        if out_dir:
+            overlay(ref, sil, os.path.join(out_dir, "iou_sdf_%s.png" % view), "%s SDF IoU=%.3f" % (view, res[view]))
+    return res, masks, (occ, axes)
 
 
 def main():

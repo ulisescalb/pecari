@@ -35,7 +35,7 @@ from pecari_sdf import *  # noqa: F401,F403  (modelo numerico compartido)
 from pecari_sdf import (smoothstep, normalize, num_grad, smin, smax, Sweep, BodyField, HeadField,
                         JawField, project, project_normal, relax, field_laplacian, surface_along,
                         field_normal, MeshBuilder, mirror_k, head_transform, to_world, to_can,
-                        resolve_legs, skel_point)
+                        resolve_legs, skel_point, ear_rings, ear_root_can, AnatomyModel)
 
 T0 = time.time()
 
@@ -324,7 +324,7 @@ def build_head(P, coll):
     return obj, field, base, info
 
 
-def build_jaw(P, coll):
+def build_jaw(P, coll, head_base=None):
     J = P["jaw"]
     field = JawField(J)
     C = J["cage"]
@@ -343,7 +343,16 @@ def build_jaw(P, coll):
     # comisura en la mandibula
     MC = P["head"]["mouth_corner"]
     try:
-        ms = surface_along(field, [0.0, MC["u"], MC["z"] - 0.004], [1, 0, 0])
+        # comisura visible: el punto mas alto de la cara lateral de la mandibula, a la altura
+        # u de la comisura, que queda FUERA de la cabeza (la linea del labio inferior)
+        ms = None
+        for z in np.linspace(MC["z"], MC["z"] - 0.03, 61):
+            p = surface_along(field, [0.0, MC["u"], z], [1, 0, 0])
+            if head_base is None or head_base(p[None])[0] > 0.0008:
+                ms = p
+                break
+        if ms is None:
+            ms = surface_along(field, [0.0, MC["u"], MC["z"] - 0.004], [1, 0, 0])
         for side in (1, -1):
             inset_loops(obj, ms * np.array([side, 1, 1]), 0, P["head"]["inset_mouth"])
         V = get_V(obj)
@@ -377,26 +386,9 @@ def build_eye(name, center_w, radius, cuts, coll):
 
 def build_ear(name, side, base_w, P_ear, coll):
     A = P_ear
-    L = A["length"]
-    e3 = normalize(np.array(A["dir_world"]) * np.array([side, 1, 1]))
-    back = np.array(A["back_world"], float) * np.array([side, 1, 1])
-    e2 = normalize(back - (back @ e3) * e3)          # dorso convexo
-    e1 = np.cross(e2, e3)                              # ancho
-    n = A["nring"]
+    rings_pts, (e1, e2, e3) = ear_rings(A, side, base_w)
     mb = MeshBuilder()
-    rings = []
-    for t, W, D, Cp in zip(A["t"], A["half_width"], A["back_bulge"], A["cup"]):
-        c = base_w + e3 * (t * L) + e2 * (A["bend"] * max(t, 0) ** 2)
-        pts = []
-        for k in range(n):
-            ph = 2 * math.pi * k / n
-            cx, sy = math.cos(ph), math.sin(ph)
-            if sy >= 0:
-                y = D * sy
-            else:
-                y = (Cp - A["front_thick"]) * abs(sy)
-            pts.append(c + e1 * (W * cx) + e2 * y)
-        rings.append(mb.add_verts(pts))
+    rings = [mb.add_verts(r) for r in rings_pts]
     for i in range(len(rings) - 1):
         mb.bridge(rings[i], rings[i + 1])
     mb.cap(rings[-1], 4, 2, e3, 0.25 * A["half_width"][-1])
@@ -812,6 +804,9 @@ def write_report(path_md, path_json, version, P, M, VAL, groups, timings, engine
         unit = "kg" if key == "mass_kg" else ("" if key == "head_hb_ratio" else "m")
         lines.append("| %s | %.3f %s | %.3f %s | %+.1f %% | ±%d %% | %s | %s |"
                      % (key, tv, unit, v, unit, 100 * err, round(100 * tol), src, "si" if ok else "NO"))
+    if "iou_side" in M:
+        lines += ["", "IoU de silueta (piel + pelaje) contra las fotos: **lateral %.3f**, **frontal %.3f** "
+                  "(superposiciones iou_side.png / iou_front.png)." % (M["iou_side"], M["iou_front"])]
     lines += ["", "Volumen union = %.5f m3 (suma de piezas %.5f m3; la diferencia es el solape cabeza/cuello/mandibula)."
               % (M["volume_union_m3"], M["volume_sum_m3"]), "",
               "## Validacion de malla", "",
@@ -865,7 +860,7 @@ def main():
     H = P["head"]
     R, T = head_transform(H)
     head, head_field, head_base, hinfo = build_head(P, coll)
-    jaw, jaw_field = build_jaw(P, coll)
+    jaw, jaw_field = build_jaw(P, coll, head_base)
     timings["head+jaw"] = time.time() - t
 
     t = time.time()
@@ -967,6 +962,19 @@ def main():
             "head_center": (0.5 * (np.array(M["_points"]["snout_tip"]) + np.array(M["_points"]["nuchal"]))
                             + np.array([0.0, 0.0, -0.025])).tolist()})
         timings["render"] = time.time() - t
+    # IoU de silueta contra las fotos (requiere opencv: venv con bpy de PyPI)
+    try:
+        import silhouette
+        t = time.time()
+        res = silhouette.evaluate_mesh(os.path.join(out_render, "mesh_arrays.npz"), out_render)
+        with open(os.path.join(out_render, "iou.json"), "w") as fh:
+            json.dump(res, fh, indent=1)
+        M["iou_side"] = res["side"]
+        M["iou_front"] = res["front"]
+        timings["iou"] = time.time() - t
+        log("IoU lateral %.3f | frontal %.3f" % (res["side"], res["front"]))
+    except ImportError as e:
+        log("aviso: sin IoU de silueta (%s)" % e)
     with open(os.path.join(out_render, "points.json"), "w") as fh:
         json.dump(M["_points"], fh, indent=1)
     M.pop("_points")

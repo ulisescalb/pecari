@@ -516,14 +516,18 @@
   "render": {
     "resolution": 1024,
     "samples": 96,
-    "clay_color": [0.42, 0.42, 0.42],
+    "clay_color": [0.55, 0.55, 0.55],
     "eye_color": [0.06, 0.06, 0.06],
     "tooth_color": [0.8, 0.78, 0.72],
-    "background": [0.55, 0.55, 0.55],
-    "ground_color": [0.38, 0.38, 0.38],
-    "ortho_side": 1.05,
-    "ortho_front": 0.62,
-    "ortho_top": 1.05
+    "background": [0.22, 0.22, 0.24],
+    "ground_color": [0.3, 0.3, 0.3],
+    "exposure": -0.6,
+    "key_w": 90,
+    "fill_w": 8,
+    "rim_w": 70,
+    "ambient": 0.015,
+    "fill": 0.88,
+    "_doc": "Arcilla: fondo gris oscuro y relacion key/fill alta para leer el volumen; exposicion -0.6 EV. El animal ocupa ~88% del lado mayor del cuadro."
   },
   "skeleton": {
     "_doc": "Articulaciones (centros oseos) del lado izquierdo en el marco de diseno. Esquema de ungulado: humero atras-abajo, antebrazo vertical; femur adelante-abajo, tibia atras-abajo, metatarso casi vertical con el pie bajo la cadera. Los puntos de columna y craneo se exportan a export/landmarks.json.",
