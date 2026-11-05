@@ -362,7 +362,98 @@ def render_all(objs, out_dir, R, args=None, info=None):
         contact_sheet([out[v] for v in VIEWS], os.path.join(out_dir, "contact_sheet.png"))
     except Exception as e:
         print("[render] aviso hoja de contacto:", e)
+    if scene.render.engine == "CYCLES":
+        scene.cycles.samples = min(samples, 48)
+    render_vertex_groups(objs, out_dir, R)
+    render_wire_head(objs, out_dir, info)
     return engine
+
+
+GROUP_COLORS = {"fur_face": (0.90, 0.60, 0.50), "fur_legs": (1.0, 0.80, 0.10),
+                "fur_belly": (0.10, 0.30, 1.0), "fur_mane": (1.0, 0.10, 0.10),
+                "fur_collar": (0.10, 1.0, 0.10), "bare_hooves": (0.60, 0.10, 0.90),
+                "bare_snout": (0.10, 0.90, 0.90)}
+
+
+def render_vertex_groups(objs, out_dir, R):
+    """Vista de control de los grupos de pelaje (colores mezclados por peso)."""
+    scene = bpy.context.scene
+    saved = {n: [m for m in o.data.materials] for n, o in objs.items()}
+    for n, o in objs.items():
+        me = o.data
+        nv = len(me.vertices)
+        C = np.full((nv, 3), 0.35)
+        for g, col in GROUP_COLORS.items():
+            vg = o.vertex_groups.get(g)
+            if vg is None:
+                continue
+            for v in me.vertices:
+                for ge in v.groups:
+                    if ge.group == vg.index and ge.weight > 0:
+                        C[v.index] = C[v.index] * (1 - ge.weight) + np.array(col) * ge.weight
+        ca = me.color_attributes.new("RV_groups", "FLOAT_COLOR", "POINT")
+        ca.data.foreach_set("color", np.hstack([C, np.ones((nv, 1))]).ravel())
+        m = bpy.data.materials.get("RV_groups_mat")
+        if m is None:
+            m = bpy.data.materials.new("RV_groups_mat")
+            m.use_nodes = True
+            nt = m.node_tree
+            a = nt.nodes.new("ShaderNodeAttribute")
+            a.attribute_name = "RV_groups"
+            nt.links.new(a.outputs["Color"], nt.nodes["Principled BSDF"].inputs["Base Color"])
+        set_material(o, m)
+    setup_world(scene, (0.8, 0.8, 0.8), ambient=0.4)
+    t = Vector((0, 0, 0.22))
+    for name, d in (("groups_three_quarter", Vector((0.72, -0.62, 0.40))),
+                    ("groups_below", Vector((0.50, -0.30, -0.35)))):
+        d = d.normalized()
+        camera(name, t + d * 1.9, target=t, lens=50)
+        three_point(t, -d, 3.0)
+        scene.render.filepath = os.path.join(out_dir, name + ".png")
+        bpy.ops.render.render(write_still=True)
+        print("[render]", name, flush=True)
+    for n, o in objs.items():
+        o.data.materials.clear()
+        for m in saved[n]:
+            o.data.materials.append(m)
+        ca = o.data.color_attributes.get("RV_groups")
+        if ca is not None:
+            o.data.color_attributes.remove(ca)
+
+
+def render_wire_head(objs, out_dir, info):
+    """Primer plano de la cabeza con la malla en alambre (bucles de parpados y comisura)."""
+    scene = bpy.context.scene
+    clay = principled("RV_wire_clay", (0.6, 0.6, 0.6), 0.6, 0.2)
+    dark = principled("RV_wire_dark", (0.01, 0.01, 0.01), 0.9, 0.0)
+    eye = principled("RV_eye", (0.05, 0.05, 0.05), 0.3, 0.5)
+    saved = {n: [m for m in o.data.materials] for n, o in objs.items()}
+    wires = []
+    for n, o in objs.items():
+        set_material(o, eye if "Eye" in n else clay)
+        w = bpy.data.objects.new("RV_WF_" + n, o.data.copy())
+        scene.collection.objects.link(w)
+        md = w.modifiers.new("wf", "WIREFRAME")
+        md.thickness = 0.00035
+        md.use_replace = True
+        set_material(w, dark)
+        wires.append(w)
+    setup_world(scene, (0.85, 0.85, 0.85), ambient=0.35)
+    c = Vector(info["head_center"]) if info and "head_center" in info else Vector((0, -0.4, 0.3))
+    d = Vector((0.85, -0.45, 0.25)).normalized()
+    camera("wire_head", c + d * 0.62, target=c, lens=85)
+    three_point(c, -d, 1.5)
+    scene.render.filepath = os.path.join(out_dir, "wire_head.png")
+    bpy.ops.render.render(write_still=True)
+    print("[render] wire_head", flush=True)
+    for w in wires:
+        me = w.data
+        bpy.data.objects.remove(w, do_unlink=True)
+        bpy.data.meshes.remove(me)
+    for n, o in objs.items():
+        o.data.materials.clear()
+        for m in saved[n]:
+            o.data.materials.append(m)
 
 
 def _standalone():

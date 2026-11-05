@@ -327,7 +327,43 @@ def project(V, f, iters=6, max_step=0.02, mid=None):
     return V
 
 
-def relax(V, E, f, iters=10, lam=0.45, mid=None, fixed=None):
+def project_normal(V, N, f, reach=0.03, steps=61, mid=None):
+    """Proyeccion tipo shrinkwrap: cada vertice busca el cruce del campo a lo largo de
+    su normal (el mas cercano dentro de +-reach). Asi los salientes del SDF (corvejon,
+    pezuna, olecranon) reciben vertices aunque la superficie subdividida quede por
+    dentro; si no hay cruce se usa la proyeccion al punto mas cercano."""
+    N = N / np.maximum(np.linalg.norm(N, axis=1), 1e-9)[:, None]
+    # solo donde la superficie subdividida queda DENTRO del campo (salientes);
+    # en pliegues concavos (axilas) los rayos convergen: ahi, punto mas cercano.
+    inside = f(V) < 0
+    ts = np.linspace(-reach, reach, steps)
+    nV = len(V)
+    D = np.empty((nV, steps))
+    for j, t in enumerate(ts):
+        D[:, j] = f(V + t * N)
+    s = np.sign(D)
+    cross = (s[:, :-1] * s[:, 1:]) <= 0
+    tc = np.full(nV, np.nan)
+    tmid = 0.5 * (ts[:-1] + ts[1:])
+    has = cross.any(1)
+    if has.any():
+        dist = np.where(cross, np.abs(tmid)[None, :], np.inf)
+        j = np.argmin(dist, axis=1)
+        idx = np.nonzero(has)[0]
+        j = j[idx]
+        d0 = D[idx, j]
+        d1 = D[idx, j + 1]
+        w = d0 / np.where(np.abs(d0 - d1) < 1e-12, 1e-12, (d0 - d1))
+        tc[idx] = ts[j] + np.clip(w, 0, 1) * (ts[1] - ts[0])
+    ok = ~np.isnan(tc) & inside
+    V = V.copy()
+    V[ok] = V[ok] + tc[ok, None] * N[ok]
+    if mid is not None:
+        V[mid, 0] = 0.0
+    return project(V, f, 4, max_step=0.005, mid=mid)
+
+
+def relax(V, E, f, iters=10, lam=0.45, mid=None, fixed=None, convex_damp=0.0, weight=None):
     n = len(V)
     deg = (np.bincount(E[:, 0], minlength=n) + np.bincount(E[:, 1], minlength=n)).astype(float)
     deg = np.maximum(deg, 1.0)
@@ -339,12 +375,35 @@ def relax(V, E, f, iters=10, lam=0.45, mid=None, fixed=None):
         g = num_grad(f, V)
         nrm = g / np.maximum(np.linalg.norm(g, axis=1), 1e-9)[:, None]
         dl = avg - V
+        # convexidad local: en salientes (vecinos por debajo del plano tangente) se
+        # frena el deslizamiento para no "pelar" corvejon, pezunas u olecranon;
+        # en pliegues concavos (axilas) se relaja del todo.
+        elen = np.linalg.norm(V[E[:, 0]] - V[E[:, 1]], axis=1)
+        el = np.zeros(n)
+        np.add.at(el, E[:, 0], elen)
+        np.add.at(el, E[:, 1], elen)
+        el = np.maximum(el / deg, 1e-6)
+        conv = -np.einsum("ij,ij->i", dl, nrm) / el
+        damp = 1.0 - convex_damp * smoothstep(0.03, 0.15, conv)
         dl -= np.einsum("ij,ij->i", dl, nrm)[:, None] * nrm
         if fixed is not None:
             dl[fixed] = 0.0
-        V = V + lam * dl
+        if weight is not None:
+            damp = damp * weight
+        V = V + lam * damp[:, None] * dl
         V = project(V, f, 2, mid=mid)
     return V
+
+
+def field_laplacian(f, P, h=2e-3):
+    """Laplaciano numerico del campo (~ 2 x curvatura media): >0 convexo, <0 concavo."""
+    f0 = f(P)
+    lap = np.zeros(len(P))
+    for i in range(3):
+        D = np.zeros(3)
+        D[i] = h
+        lap += f(P + D) + f(P - D) - 2.0 * f0
+    return lap / (h * h)
 
 
 def surface_along(f, origin, direction, tmax=0.25, n=500):
@@ -605,11 +664,23 @@ def build_body(P, coll):
                     ko, ki = mirror_k(kout, n), mirror_k(kin, n)
                     root = [rings[i][ko], rings[i][ki], rings[i + 1][ki], rings[i + 1][ko]]
                 prev = root
-                for cx, cy, cz, hx, hy in L["cage"]:
-                    x = side * cx
-                    o = side * hx
-                    pts = [[x + o, cy - hy, cz], [x - o, cy - hy, cz],
-                           [x - o, cy + hy, cz], [x + o, cy + hy, cz]]
+                # centros de la cadena (lado izquierdo) para orientar cada anillo
+                # perpendicular al eje local de la pata; la suela queda horizontal
+                rc = np.mean([mb.verts[k] for k in root], axis=0) * np.array([side, 1, 1])
+                cen = [rc] + [np.array(c[:3], float) for c in L["cage"]]
+                ncage = len(L["cage"])
+                for j, (cx, cy, cz, hx, hy) in enumerate(L["cage"]):
+                    c = cen[j + 1]
+                    if j == ncage - 1:
+                        t = np.array([0.0, 0.0, -1.0])
+                    else:
+                        t = normalize(cen[j + 2] - cen[j])
+                    f0 = np.array([0.0, -1.0, 0.0])
+                    f = normalize(f0 - (f0 @ t) * t)
+                    lat = normalize(np.cross(f, t))
+                    pts = [c + hy * f + hx * lat, c + hy * f - hx * lat,
+                           c - hy * f - hx * lat, c - hy * f + hx * lat]
+                    pts = [p * np.array([side, 1, 1]) for p in pts]
                     cur = mb.add_verts(pts)
                     mb.bridge(prev, cur)
                     prev = cur
@@ -624,8 +695,22 @@ def build_body(P, coll):
     E = get_E(obj)
     mid = np.abs(V[:, 0]) < 1e-6
     V[mid, 0] = 0.0
+    V = project_normal(V, get_N(obj), field, mid=mid)
     V = project(V, field, B["project_iters"], mid=mid)
-    V = relax(V, E, field, B["relax_iters"], B["relax_lambda"], mid=mid)
+    # relajacion en dos fases: suave en todo el cuerpo (conserva salientes como el
+    # corvejon) y fuerte solo en pliegues concavos (axilas, ingles), donde la
+    # proyeccion amontona vertices
+    V = relax(V, E, field, B["relax_iters"], B["relax_lambda"], mid=mid,
+              convex_damp=B.get("relax_convex_damp", 0.0))
+    if B.get("crease_relax_iters", 0) > 0:
+        lap = field_laplacian(field, V)
+        wc = 1.0 - smoothstep(-B["crease_lap"], B["crease_lap"], lap)
+        # dilatar la mascara a los vecinos
+        acc = np.zeros(len(V))
+        np.maximum.at(acc, E[:, 0], wc[E[:, 1]])
+        np.maximum.at(acc, E[:, 1], wc[E[:, 0]])
+        wc = np.maximum(wc, acc)
+        V = relax(V, E, field, B["crease_relax_iters"], 0.45, mid=mid, weight=wc)
     V = project(V, field, 4, mid=mid)
     set_V(obj, V)
     fix_normals(obj)
@@ -646,6 +731,7 @@ def build_head(P, coll):
     E = get_E(obj)
     mid = np.abs(V[:, 0]) < 1e-6
     V[mid, 0] = 0.0
+    V = project_normal(V, get_N(obj), base, mid=mid)
     V = project(V, base, H["project_iters"], mid=mid)
     V = relax(V, E, base, H["relax_iters"], H["relax_lambda"], mid=mid)
     set_V(obj, V)
@@ -694,6 +780,7 @@ def build_jaw(P, coll):
     E = get_E(obj)
     mid = np.abs(V[:, 0]) < 1e-6
     V[mid, 0] = 0.0
+    V = project_normal(V, get_N(obj), field, mid=mid)
     V = project(V, field, J["project_iters"], mid=mid)
     V = relax(V, E, field, J["relax_iters"], J["relax_lambda"], mid=mid)
     set_V(obj, V)
@@ -941,10 +1028,10 @@ def union_volume(objs, vol, rng):
     return vol["Pecari_Body"] + extra
 
 
-def measure(P, objs, info, R, T, shift):
+def measure(P, objs, info, R, T, off):
     LM = P["landmarks"]
     S = P["meta"]["global_scale"]
-    off = np.array([0.0, shift, 0.0])
+    shift = float(off[1])
 
     def lmw(p):
         return np.asarray(p, float) * S + off
@@ -998,7 +1085,7 @@ def measure(P, objs, info, R, T, shift):
     hy = LM["hind_leg_y"] * S + shift
     hl = Vb[(Vb[:, 0] > 0.02 * S) & (Vb[:, 1] > hy - 0.06 * S) & (Vb[:, 2] > 0.10 * S) & (Vb[:, 2] < 0.22 * S)]
     P_heel = hl[np.argmax(hl[:, 1])]
-    toe = Vb[(Vb[:, 0] > 0.02 * S) & (Vb[:, 1] > 0) & (Vb[:, 2] < 0.004 * S)]
+    toe = Vb[(Vb[:, 0] > 0.02 * S) & (Vb[:, 1] > 0) & (Vb[:, 2] < 0.012 * S)]
     P_toe = toe[np.argmin(toe[:, 1])]
     M["hind_foot"] = float(np.linalg.norm(P_heel - P_toe))
     # ojo
@@ -1150,15 +1237,19 @@ def main():
     yf = soles[soles[:, 1] < 0][:, 1].mean()
     yh = soles[soles[:, 1] > 0][:, 1].mean()
     shift = -0.5 * (yf + yh) * S
+    zshift = -float(Vb[:, 2].min()) * S       # suelas exactamente en Z = 0
     for o in objs.values():
         V = get_V(o) * S
         V[:, 1] += shift
+        V[:, 2] += zshift
         set_V(o, V)
         shade_smooth(o)
         o.data.update()
-    log("recentrado: pezunas delanteras y=%.3f traseras y=%.3f -> desplazamiento %.4f" % (yf, yh, shift))
-    R_s, T_s = R, (T * S + np.array([0, shift, 0]))
-    info["ear_base"] = info["ear_base"] * S + np.array([0, shift, 0])
+    log("recentrado: pezunas delanteras y=%.3f traseras y=%.3f -> desplazamiento Y %.4f, Z %.4f"
+        % (yf, yh, shift, zshift))
+    off = np.array([0.0, shift, zshift])
+    R_s, T_s = R, (T * S + off)
+    info["ear_base"] = info["ear_base"] * S + off
 
     # validacion
     t = time.time()
@@ -1169,7 +1260,7 @@ def main():
         validate_cache[n] = VAL[n]
     timings["validate"] = time.time() - t
     t = time.time()
-    M = measure(P, objs, info, R_s, T_s, shift)
+    M = measure(P, objs, info, R_s, T_s, off)
     timings["measure"] = time.time() - t
 
     # guardar

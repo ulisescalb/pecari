@@ -142,3 +142,192 @@ masa 23,0 kg (+4,5 %). Siguen fuera el pie trasero, el disco y el canino.
   inclina hacia atrás. Lo de los muslos se corrige en la iteración de patas y cuartos traseros
   (v04), que es su región.
 - Lo más grave para reconocer al pecarí sigue siendo la **cabeza** → v03.
+
+---
+
+## v03 — cambio: cabeza en cuña de pecarí
+
+**Intención**: que la cabeza deje de leerse como oso hormiguero o tapir:
+- perfil en cuña, con la línea dorsal recta del disco a la frente y la cabeza profunda atrás;
+- mejilla y masetero que tapen la parte posterior de la mandíbula, para que deje de ser una
+  "bolsa";
+- cabeza más ancha que el cuello;
+- orejas anchas y redondeadas;
+- caninos cortos.
+
+**Cambios** (`head`, `jaw`, `ear`, `canine`):
+- Estaciones de la cabeza: dorso lineal 0,0185 → 0,0645 m entre u = 0 y 0,18. El borde
+  inferior baja detrás de la comisura (−0,034 / −0,047 / −0,052 en u = 0,15 / 0,18 / 0,205)
+  para cubrir la rama mandibular. Semiancho de mejilla 0,056–0,058 y disco 0,0245.
+- Mandíbula más estrecha atrás (0,044) y con el techo hundido dentro de la cabeza.
+- Orejas: semiancho máximo 0,0205 → 0,025, más inclinadas hacia fuera y atrás.
+- Canino: largo 0,030 → 0,021 m.
+
+**Medidas**: disco 0,045 (ya dentro), canino expuesto 13 mm (dentro). **Oreja 0,067 (−10 %)**,
+porque al acortar el parámetro a 0,072 la oreja real quedó corta. **Ancho de cabeza 0,124
+(+7,7 %)**.
+
+**Crítica**:
+- Mejora clara en la vista lateral: ahora hay cuña y la mejilla cubre la parte trasera de la
+  mandíbula.
+- La mandíbula sigue viéndose como un rollo continuo bajo el labio superior, de la barbilla a la
+  mejilla.
+- Las orejas se ven más anchas en 3/4, pero de perfil siguen siendo láminas finas y altas.
+- El hocico mejoró, aunque aún tiende a cilíndrico.
+
+## v04 — cambio: patas y cuartos traseros
+
+**Intención**:
+- Quitar el bulto de los muslos detectado en la v02.
+- Subir el corvejón para que el pie trasero (0,210 m, fuente 2) se cumpla.
+- Menudillos y pezuñas más finos (fuera "hueso de perro").
+- Apoyo más estrecho bajo un pecho estrecho.
+
+**Cambios** (`legs`):
+- Muslo: radio 0,044 → 0,036, x 0,068 → 0,060.
+- Patas 5–6 mm hacia la línea media.
+- Corvejón a z 0,168 con la tuberosidad calcánea en (0,281, 0,186).
+- Radios de menudillo, cuartilla y pezuña reducidos 10–15 %.
+
+**Medidas**: ancho del cuerpo 0,208 (−3,3 %), masa 22,4 kg. **Pie trasero 0,183 (−12,7 %)**.
+
+**Crítica**:
+- El apoyo frontal es más creíble y las pezuñas son menos bulbosas.
+- La grupa **sigue** viéndose como una bola con un pliegue delante, así que el diagnóstico de la
+  v02 era incompleto. La causa principal es geométrica: el casquete elipsoidal del barrido
+  arranca con tangente horizontal (√(1−e²) tiene derivada 0 en e = 0), mientras la línea dorsal
+  venía cayendo con pendiente −0,5. Ese salto de pendiente (C0, no C1) crea un pliegue cóncavo
+  seguido de una cúpula.
+- El pie trasero no llega por dos razones (diagnóstico numérico del campo frente a la malla):
+  1. La pezuña solo toca el suelo con la punta: el talón quedaba 4 mm en el aire.
+  2. La malla no alcanza la punta del corvejón.
+
+## v05 — cambio: silueta trasera y apoyo (última iteración permitida)
+
+**Intención de diseño**:
+- Grupa continua sin pliegue: las dos últimas estaciones son iguales, así la pendiente es 0
+  donde empieza el casquete, que se alarga a 0,090.
+- Pezuñas como cuña con la suela plana en el suelo (cono de casco con la generatriz inferior
+  en z = 0 y bulbo del talón apoyado).
+- Punta del corvejón más marcada (elipsoide del corvejón más ancho y hacia atrás).
+
+**Calibraciones** (sin concepto de forma nuevo, solo para cumplir los criterios de aceptación):
+- `ear.length` 0,072 → 0,080, para que la oreja medida dé 0,075.
+- Mejilla x 0,044 → 0,040, para que el ancho de cabeza dé 0,120.
+
+**Primera ejecución de v05** (guardada en `renders/v05_prefix/`, sin `.blend`):
+- La grupa ya no tiene pliegue.
+- **El pie trasero seguía en 0,178 (−15 %)**. Al inspeccionar con alambre
+  (`ortho` de la pata trasera) aparecieron **tres defectos del generador** (no de los
+  parámetros) que impedían que la malla siguiera al SDF en salientes estrechos:
+  1. Los anillos de la jaula de las patas eran horizontales. En el gaskin, que baja hacia atrás
+     a ~30°, el tubo se aplastaba.
+     → *Arreglo*: cada anillo se orienta perpendicular al eje local de la pata; la suela sigue
+     horizontal.
+  2. Proyectar al punto más cercano desde una superficie subdividida que queda *dentro* de un
+     saliente lleva los vértices a los flancos, no a la punta.
+     → *Arreglo*: proyección tipo shrinkwrap a lo largo de la normal, solo para vértices que
+     están dentro del campo (salientes). En los pliegues cóncavos se mantiene el punto más
+     cercano, porque ahí los rayos convergen.
+  3. La relajación tangencial fuerte (14×0,45) "pelaba" los salientes; la débil dejaba
+     pliegues en la axila.
+     → *Arreglo*: relajación en dos fases. Una suave en todo el cuerpo (6×0,30) y otra fuerte
+     (14×0,45) solo donde el laplaciano del campo es negativo (pliegues cóncavos: axilas,
+     ingles), con la máscara dilatada a los vecinos.
+- Con esos arreglos, la pezuña y el corvejón del SDF se ensancharon un poco (radio de punta
+  0,0043 → 0,006; elipsoide del corvejón 0,0235 → 0,028 hacia atrás) para que fueran salientes
+  que una malla de 16 vértices alrededor puede seguir.
+- También se corrigió la definición de medida de la punta de la pezuña: el punto más adelantado
+  del casco por debajo de 12 mm (antes, solo los vértices a < 4 mm del suelo).
+
+No cuento esto como una sexta iteración: los parámetros de forma de la v05 no cambiaron, salvo
+los dos retoques de discretización citados, y el arreglo es del generador. Lo dejo explícito
+para que se pueda juzgar.
+
+**Medidas finales v05** (`renders/v05/report.md`): **todas dentro de tolerancia**.
+
+| medida | objetivo | malla | error |
+|---|---:|---:|---:|
+| HB (cabeza-cuerpo) | 0,900 m | 0,923 m | +2,5 % |
+| cruz | 0,420 m | 0,419 m | −0,1 % |
+| largo de cabeza | 0,230 m | 0,238 m | +3,5 % |
+| cabeza / HB | 0,255 | 0,258 | +1,2 % |
+| oreja | 0,075 m | 0,075 m | +0,1 % |
+| pie trasero | 0,210 m | 0,203 m | −3,2 % |
+| grupa | 0,405 m | 0,407 m | +0,5 % |
+| profundidad de pecho | 0,225 m | 0,230 m | +2,2 % |
+| altura libre bajo el vientre | 0,190 m | 0,184 m | −3,0 % |
+| ancho del cuerpo | 0,215 m | 0,208 m | −3,3 % |
+| ancho de cabeza | 0,115 m | 0,120 m | +4,0 % |
+| disco nasal | 0,046 m | 0,045 m | −1,9 % |
+| ojo | 0,017 m | 0,017 m | 0,0 % |
+| canino expuesto | 0,013 m | 0,013 m | +2,8 % (tol ±10 %) |
+| **masa** (volumen de la unión × 1000) | 22 kg | **22,7 kg** | +3,0 % (tol ±25 %) |
+
+**Malla**:
+- 8288 quads en total (cuerpo 4480, cabeza 1888, mandíbula 928, orejas 2×352, ojos 2×96,
+  caninos 2×48).
+- 0 triángulos, 0 n-gons; las 9 piezas son manifold y cerradas.
+- 0 normales incoherentes (todas hacia fuera, volumen con signo > 0).
+- 0 vértices o aristas sueltos, 0 autointersecciones dentro de cada pieza.
+- Las piezas se solapan entre sí a propósito: cabeza en cuello, mandíbula en cabeza, raíces de
+  orejas y caninos.
+
+**Crítica de los renders finales**:
+- **Silueta lateral**: se lee como un pecarí esquemático, todavía con algo de tapir, y no como
+  cerdo doméstico (no hay orejas caídas ni papada, y el disco es pequeño) ni como jabalí (no hay joroba
+  de cruz ni colmillos curvados hacia arriba). Sigue siendo **demasiado tubular**: la mitad
+  trasera es un bloque de altura casi constante que acaba en una cúpula redonda (al quitar el
+  pliegue, la grupa quedó cuadrada). El pecarí real se afina desde la cadera, tanto por arriba
+  como por abajo.
+- **Cabeza/cuerpo**: la proporción numérica es correcta (25,8 %), pero la cabeza se ve algo
+  pequeña frente a un tronco largo.
+- **Cuello**: corto y grueso (bien).
+- **Lomo**: arco leve (bien, aunque sutil).
+- **Barril**: profundidad correcta.
+- **Patas**: finas, con corvejón y codo legibles y pezuñas planas apoyadas (bien). Pezuña sin
+  hendidura entre dedos.
+- **Hocico truncado** con disco ancho y narinas insinuadas (bien).
+- **Ojos** pequeños, altos y laterales, con bucles de párpado concéntricos (bien).
+- **Orejas**: tamaño correcto, pero son láminas finas y demasiado verticales; en 3/4 parecen de
+  ratón.
+- **Caninos** cortos y rectos hacia abajo (bien).
+- **Sin cola visible** (bien).
+- **Mandíbula**: todavía se lee como un rollo separado bajo el labio. El parche de la comisura
+  en la mandíbula quedó ~1 cm por debajo de la línea visible del labio.
+
+## Estado y zonas débiles (para la siguiente etapa)
+
+1. **Grupa y tercio posterior demasiado altos y cuadrados**. Propuesta: sustituir el casquete
+   largo por estaciones que se encojan de forma gradual desde y = 0,20 (lomo 0,406 → 0,35;
+   vientre 0,236 → 0,30; semiancho 0,089 → 0,03 en y = 0,35) más un casquete corto (~0,015). El
+   casquete ya no fija la forma y la continuidad C1 sale de la interpolación PCHIP.
+2. **Mandíbula como rollo**. Propuesta: estrechar la mandíbula delante de la comisura para que
+   el labio superior la cubra, y bajar la estación de comisura del parche de la mandíbula a la
+   línea real del labio (u ≈ 0,11, z ≈ −0,021 en la mandíbula).
+3. **Orejas**: falta grosor en la base y una curvatura de concha (hoy son láminas de 12
+   vértices por anillo). Inclinarlas ~15° más hacia atrás.
+4. **Pezuñas sin hendidura**: un solo casco por pata. A esta distancia de juego se resuelve
+   mejor con un mapa normal en la etapa de texturas.
+5. **Crin**: buena parte de la silueta del pecarí real es la crin dorsal erizada. Es pelaje y le
+   toca a la siguiente etapa; el grupo `fur_mane` ya marca la banda de la nuca a la grupa.
+6. Medido a nivel de piel, el HB queda un 2,5 % alto. Hay margen si se acorta el tronco al
+   arreglar la grupa (punto 1).
+7. **Rendimiento**: 8288 quads ≈ 16 600 triángulos por instancia. Para manadas de 15, conviene
+   generar LODs en la siguiente etapa (por ejemplo, usar la jaula sin subdividir, unas 450
+   caras en cuerpo + cabeza + mandíbula, o un Decimate del 50 %).
+
+## Reproducibilidad
+
+- Versión final: `blender -b -P src/build_pecari.py -- --version v05`. Tarda ~2 min en este
+  contenedor (4 CPU, Cycles CPU); la geometría sola tarda ~7 s (`--no-render`).
+- Cada `renders/vNN/params_used.json` guarda los parámetros exactos de esa versión.
+  - v01–v04 se generaron con el código del commit `d460f75` (antes de los arreglos del
+    generador de la v05).
+  - El `params_used.json` de v01 se reconstruyó a mano tras el primer cambio; difiere solo en
+    la jaula de la grupa.
+- Render independiente de un .blend:
+  `blender -b blend/pecari_v05.blend -P src/render_views.py -- --version v05`.
+- Variante escalada: con `meta.global_scale = 1.15` y los `targets` escalados, la build pasa
+  todos los criterios (HB 1,061 m, cruz 0,483 m, 34,5 kg). Es el punto de partida para
+  *Tayassu pecari*.

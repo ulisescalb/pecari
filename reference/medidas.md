@@ -66,8 +66,8 @@ cola 3–6 cm.
 - **Ancho de cabeza** = 2·|x| máximo de cabeza y mandíbula.
 - **Oreja** = distancia de la punta de la oreja al punto donde su eje corta la superficie de la
   cabeza (rayo sobre `Pecari_Head`).
-- **Pie trasero** = vértice más posterior del corvejón izquierdo → vértice más adelantado de la
-  pezuña trasera izquierda a nivel del suelo.
+- **Pie trasero** = vértice más posterior del corvejón izquierdo (tuberosidad calcánea) → vértice
+  más adelantado del casco trasero izquierdo (por debajo de 12 mm de altura).
 - **Canino expuesto** = distancia de la punta del canino a la superficie del labio, a lo largo
   de su eje.
 - **Masa** = volumen de la **unión** de todas las mallas (volumen exacto del cuerpo más un

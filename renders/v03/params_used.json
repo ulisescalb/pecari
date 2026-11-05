@@ -1,0 +1,1096 @@
+{
+ "_doc": "Todas las proporciones del pecari. Unidades: metros. Ejes: Z arriba, el animal mira hacia -Y, su lado izquierdo es +X. Las coordenadas son del 'marco de diseno' (antes de global_scale y del recentrado automatico del origen entre las pezunas). Las partes pares (patas, orejas, ojos, caninos) se definen solo para el lado izquierdo (+X) y se reflejan. La cabeza y la mandibula se definen en un marco canonico: disco nasal en el origen, eje u = +Y hacia atras, plano palatino horizontal; luego se inclinan 'pitch_deg' y se colocan con el punto nucal.",
+ "meta": {
+  "species": "Pecari tajacu",
+  "common_name": "pecari de collar",
+  "variant": "collared",
+  "stage": "1-base-mesh",
+  "global_scale": 1.0
+ },
+ "targets": {
+  "_doc": "Objetivos de reference/medidas.md. tol = tolerancia relativa. source: lit = bibliografia, user = brief, design = estimacion propia.",
+  "hb_length": {
+   "value": 0.9,
+   "tol": 0.05,
+   "source": "lit"
+  },
+  "withers_height": {
+   "value": 0.42,
+   "tol": 0.05,
+   "source": "lit"
+  },
+  "head_length": {
+   "value": 0.23,
+   "tol": 0.05,
+   "source": "lit"
+  },
+  "head_hb_ratio": {
+   "value": 0.255,
+   "tol": 0.05,
+   "source": "user"
+  },
+  "ear_length": {
+   "value": 0.075,
+   "tol": 0.05,
+   "source": "user"
+  },
+  "hind_foot": {
+   "value": 0.21,
+   "tol": 0.05,
+   "source": "lit"
+  },
+  "croup_height": {
+   "value": 0.405,
+   "tol": 0.05,
+   "source": "design"
+  },
+  "chest_depth": {
+   "value": 0.225,
+   "tol": 0.05,
+   "source": "design"
+  },
+  "belly_clearance": {
+   "value": 0.19,
+   "tol": 0.05,
+   "source": "design"
+  },
+  "body_width": {
+   "value": 0.215,
+   "tol": 0.05,
+   "source": "design"
+  },
+  "head_width": {
+   "value": 0.115,
+   "tol": 0.05,
+   "source": "lit"
+  },
+  "disc_width": {
+   "value": 0.046,
+   "tol": 0.05,
+   "source": "design"
+  },
+  "eye_diameter": {
+   "value": 0.017,
+   "tol": 0.05,
+   "source": "design"
+  },
+  "canine_exposed": {
+   "value": 0.013,
+   "tol": 0.1,
+   "source": "design"
+  },
+  "mass_kg": {
+   "value": 22.0,
+   "tol": 0.25,
+   "source": "lit"
+  }
+ },
+ "landmarks": {
+  "_doc": "Puntos guia para localizar medidas sobre la malla (marco de diseno).",
+  "withers_y": -0.19,
+  "croup_y": 0.2,
+  "tail_base": [
+   0.0,
+   0.352,
+   0.335
+  ],
+  "front_leg_y": -0.205,
+  "hind_leg_y": 0.215,
+  "body_width_zmin": 0.26,
+  "leg_zmax_front": 0.235,
+  "leg_zmax_hind": 0.255,
+  "hoof_top_z": 0.022
+ },
+ "body": {
+  "_doc": "Barrido de secciones superelipticas a lo largo de Y. stations: [y, z_lomo, z_vientre, semiancho, frac_altura_max_ancho, exponente].",
+  "stations": [
+   [
+    -0.345,
+    0.352,
+    0.252,
+    0.044,
+    0.5,
+    2.2
+   ],
+   [
+    -0.32,
+    0.368,
+    0.238,
+    0.054,
+    0.5,
+    2.2
+   ],
+   [
+    -0.28,
+    0.388,
+    0.22,
+    0.064,
+    0.5,
+    2.2
+   ],
+   [
+    -0.24,
+    0.405,
+    0.203,
+    0.074,
+    0.47,
+    2.3
+   ],
+   [
+    -0.19,
+    0.419,
+    0.191,
+    0.084,
+    0.45,
+    2.3
+   ],
+   [
+    -0.13,
+    0.425,
+    0.185,
+    0.095,
+    0.44,
+    2.4
+   ],
+   [
+    -0.06,
+    0.424,
+    0.186,
+    0.104,
+    0.45,
+    2.4
+   ],
+   [
+    0.01,
+    0.42,
+    0.193,
+    0.104,
+    0.47,
+    2.4
+   ],
+   [
+    0.08,
+    0.415,
+    0.207,
+    0.098,
+    0.5,
+    2.4
+   ],
+   [
+    0.14,
+    0.411,
+    0.224,
+    0.092,
+    0.52,
+    2.4
+   ],
+   [
+    0.2,
+    0.406,
+    0.236,
+    0.089,
+    0.54,
+    2.3
+   ],
+   [
+    0.255,
+    0.394,
+    0.246,
+    0.084,
+    0.56,
+    2.2
+   ],
+   [
+    0.3,
+    0.372,
+    0.256,
+    0.072,
+    0.57,
+    2.1
+   ]
+  ],
+  "cap_front": 0.015,
+  "cap_rear": 0.065,
+  "ellipsoids": [
+   {
+    "_doc": "pecho / manubrio esternal",
+    "c": [
+     0.0,
+     -0.238,
+     0.228
+    ],
+    "r": [
+     0.042,
+     0.038,
+     0.04
+    ],
+    "k": 0.03
+   }
+  ],
+  "ground_k": 0.0025,
+  "cage": {
+   "rings_y": [
+    -0.345,
+    -0.305,
+    -0.265,
+    -0.228,
+    -0.168,
+    -0.11,
+    -0.05,
+    0.01,
+    0.068,
+    0.12,
+    0.165,
+    0.235,
+    0.285,
+    0.325,
+    0.352
+   ],
+   "nring": 12,
+   "inflate": 1.06,
+   "cap_front": {
+    "a": 2,
+    "b": 4,
+    "dome": 0.004
+   },
+   "cap_rear": {
+    "a": 2,
+    "b": 4,
+    "dome": 0.022
+   }
+  },
+  "subdiv": 2,
+  "project_iters": 10,
+  "relax_iters": 14,
+  "relax_lambda": 0.45
+ },
+ "legs": {
+  "_doc": "Pata izquierda (+X); se refleja. segments: conos redondeados [ax,ay,az, bx,by,bz, ra, rb, k]. ellipsoids: [cx,cy,cz, rx,ry,rz, k]. cage: anillos de 4 vertices [cx,cy,cz, semiancho_x, semiancho_y] debajo de la cara raiz del cuerpo (root_ring, entre ese anillo y el siguiente; caras alrededor k=4..5).",
+  "front": {
+   "root_ring": 3,
+   "k_body": 0.028,
+   "segments": [
+    [
+     0.062,
+     -0.262,
+     0.3,
+     0.064,
+     -0.2,
+     0.205,
+     0.032,
+     0.03,
+     0.01
+    ],
+    [
+     0.062,
+     -0.198,
+     0.205,
+     0.057,
+     -0.205,
+     0.118,
+     0.0275,
+     0.0172,
+     0.008
+    ],
+    [
+     0.057,
+     -0.206,
+     0.11,
+     0.056,
+     -0.205,
+     0.05,
+     0.0133,
+     0.0123,
+     0.006
+    ],
+    [
+     0.056,
+     -0.204,
+     0.046,
+     0.056,
+     -0.215,
+     0.022,
+     0.0133,
+     0.0148,
+     0.005
+    ],
+    [
+     0.056,
+     -0.214,
+     0.02,
+     0.056,
+     -0.234,
+     0.006,
+     0.0165,
+     0.008,
+     0.004
+    ]
+   ],
+   "ellipsoids": [
+    [
+     0.06,
+     -0.172,
+     0.212,
+     0.016,
+     0.02,
+     0.022,
+     0.01
+    ],
+    [
+     0.057,
+     -0.207,
+     0.113,
+     0.0172,
+     0.0192,
+     0.016,
+     0.006
+    ],
+    [
+     0.056,
+     -0.203,
+     0.047,
+     0.0152,
+     0.0168,
+     0.0148,
+     0.005
+    ],
+    [
+     0.056,
+     -0.199,
+     0.011,
+     0.0145,
+     0.012,
+     0.011,
+     0.004
+    ]
+   ],
+   "cage": [
+    [
+     0.062,
+     -0.199,
+     0.182,
+     0.03,
+     0.034
+    ],
+    [
+     0.057,
+     -0.207,
+     0.113,
+     0.021,
+     0.023
+    ],
+    [
+     0.057,
+     -0.206,
+     0.08,
+     0.016,
+     0.016
+    ],
+    [
+     0.056,
+     -0.203,
+     0.047,
+     0.018,
+     0.019
+    ],
+    [
+     0.056,
+     -0.212,
+     0.022,
+     0.019,
+     0.022
+    ],
+    [
+     0.056,
+     -0.218,
+     0.0,
+     0.018,
+     0.028
+    ]
+   ]
+  },
+  "hind": {
+   "root_ring": 10,
+   "k_body": 0.03,
+   "segments": [
+    [
+     0.068,
+     0.235,
+     0.33,
+     0.072,
+     0.18,
+     0.24,
+     0.044,
+     0.035,
+     0.012
+    ],
+    [
+     0.071,
+     0.186,
+     0.236,
+     0.06,
+     0.252,
+     0.156,
+     0.0295,
+     0.0168,
+     0.01
+    ],
+    [
+     0.063,
+     0.226,
+     0.222,
+     0.06,
+     0.274,
+     0.178,
+     0.0115,
+     0.0105,
+     0.008
+    ],
+    [
+     0.059,
+     0.251,
+     0.15,
+     0.057,
+     0.226,
+     0.05,
+     0.0135,
+     0.0121,
+     0.006
+    ],
+    [
+     0.057,
+     0.223,
+     0.046,
+     0.057,
+     0.212,
+     0.021,
+     0.013,
+     0.0144,
+     0.005
+    ],
+    [
+     0.057,
+     0.211,
+     0.019,
+     0.057,
+     0.192,
+     0.006,
+     0.0155,
+     0.0075,
+     0.004
+    ]
+   ],
+   "ellipsoids": [
+    [
+     0.06,
+     0.255,
+     0.154,
+     0.0165,
+     0.02,
+     0.018,
+     0.007
+    ],
+    [
+     0.057,
+     0.224,
+     0.047,
+     0.015,
+     0.0165,
+     0.0145,
+     0.005
+    ],
+    [
+     0.057,
+     0.225,
+     0.011,
+     0.0135,
+     0.0115,
+     0.0105,
+     0.004
+    ]
+   ],
+   "cage": [
+    [
+     0.071,
+     0.2,
+     0.205,
+     0.028,
+     0.032
+    ],
+    [
+     0.06,
+     0.257,
+     0.156,
+     0.02,
+     0.025
+    ],
+    [
+     0.058,
+     0.24,
+     0.1,
+     0.016,
+     0.016
+    ],
+    [
+     0.057,
+     0.224,
+     0.047,
+     0.017,
+     0.018
+    ],
+    [
+     0.057,
+     0.214,
+     0.021,
+     0.018,
+     0.021
+    ],
+    [
+     0.057,
+     0.205,
+     0.0,
+     0.017,
+     0.026
+    ]
+   ]
+  }
+ },
+ "head": {
+  "_doc": "Marco canonico: disco nasal en u=0, u (= +Y) hacia atras, z arriba. stations: [u, z_dorso, z_labio, semiancho, frac_altura, exponente].",
+  "pitch_deg": 15.0,
+  "nuchal_can": [
+   0.0,
+   0.228,
+   0.064
+  ],
+  "nuchal_world": [
+   0.0,
+   -0.32,
+   0.37
+  ],
+  "stations": [
+   [
+    -0.004,
+    0.0185,
+    -0.017,
+    0.0245,
+    0.5,
+    2.6
+   ],
+   [
+    0.0,
+    0.0185,
+    -0.017,
+    0.0245,
+    0.5,
+    2.6
+   ],
+   [
+    0.015,
+    0.0215,
+    -0.019,
+    0.025,
+    0.5,
+    2.5
+   ],
+   [
+    0.045,
+    0.0285,
+    -0.0215,
+    0.0265,
+    0.5,
+    2.4
+   ],
+   [
+    0.08,
+    0.0375,
+    -0.023,
+    0.029,
+    0.48,
+    2.3
+   ],
+   [
+    0.115,
+    0.047,
+    -0.025,
+    0.0345,
+    0.45,
+    2.3
+   ],
+   [
+    0.15,
+    0.057,
+    -0.034,
+    0.045,
+    0.42,
+    2.3
+   ],
+   [
+    0.18,
+    0.0645,
+    -0.047,
+    0.056,
+    0.4,
+    2.2
+   ],
+   [
+    0.205,
+    0.068,
+    -0.052,
+    0.058,
+    0.42,
+    2.2
+   ],
+   [
+    0.228,
+    0.065,
+    -0.044,
+    0.053,
+    0.45,
+    2.2
+   ],
+   [
+    0.255,
+    0.052,
+    -0.028,
+    0.045,
+    0.5,
+    2.2
+   ]
+  ],
+  "cap_front": 0.004,
+  "cap_back": 0.022,
+  "disc_u": 0.0,
+  "disc_round": 0.0045,
+  "ellipsoids": [
+   {
+    "_doc": "ensanchamiento canino del maxilar",
+    "c": [
+     0.02,
+     0.052,
+     -0.006
+    ],
+    "r": [
+     0.01,
+     0.02,
+     0.014
+    ],
+    "k": 0.012
+   },
+   {
+    "_doc": "arco cigomatico / mejilla",
+    "c": [
+     0.044,
+     0.175,
+     0.004
+    ],
+    "r": [
+     0.016,
+     0.04,
+     0.018
+    ],
+    "k": 0.015
+   }
+  ],
+  "subtract": [
+   {
+    "_doc": "narinas (hoyuelos)",
+    "c": [
+     0.0095,
+     -0.003,
+     0.001
+    ],
+    "r": [
+     0.0045,
+     0.006,
+     0.0065
+    ],
+    "k": 0.0015
+   }
+  ],
+  "cage": {
+   "rings_u": [
+    0.0,
+    0.015,
+    0.05,
+    0.09,
+    0.13,
+    0.165,
+    0.2,
+    0.23,
+    0.255
+   ],
+   "nring": 12,
+   "inflate": 1.05,
+   "cap_front": {
+    "a": 4,
+    "b": 2,
+    "dome": -0.001
+   },
+   "cap_back": {
+    "a": 2,
+    "b": 4,
+    "dome": 0.01
+   }
+  },
+  "subdiv": 2,
+  "project_iters": 10,
+  "relax_iters": 12,
+  "relax_lambda": 0.45,
+  "mouth_corner": {
+   "u": 0.118,
+   "z": -0.0215
+  },
+  "inset_eye": [
+   0.0016,
+   0.0014
+  ],
+  "inset_mouth": [
+   0.0016,
+   0.0014
+  ]
+ },
+ "jaw": {
+  "_doc": "Mandibula en el mismo marco canonico de la cabeza. stations: [u, z_sup (oculto dentro de la cabeza), z_inf, semiancho, frac_altura, exponente].",
+  "stations": [
+   [
+    0.014,
+    -0.012,
+    -0.0295,
+    0.0185,
+    0.55,
+    2.3
+   ],
+   [
+    0.04,
+    -0.012,
+    -0.037,
+    0.0225,
+    0.55,
+    2.3
+   ],
+   [
+    0.08,
+    -0.011,
+    -0.046,
+    0.026,
+    0.55,
+    2.3
+   ],
+   [
+    0.12,
+    -0.01,
+    -0.057,
+    0.032,
+    0.55,
+    2.3
+   ],
+   [
+    0.155,
+    -0.012,
+    -0.066,
+    0.04,
+    0.55,
+    2.3
+   ],
+   [
+    0.185,
+    -0.015,
+    -0.07,
+    0.044,
+    0.55,
+    2.3
+   ],
+   [
+    0.205,
+    -0.018,
+    -0.064,
+    0.042,
+    0.55,
+    2.3
+   ]
+  ],
+  "cap_front": 0.01,
+  "cap_back": 0.018,
+  "ellipsoids": [
+   {
+    "_doc": "proceso angular ancho",
+    "c": [
+     0.036,
+     0.188,
+     -0.052
+    ],
+    "r": [
+     0.012,
+     0.028,
+     0.02
+    ],
+    "k": 0.012
+   }
+  ],
+  "cage": {
+   "rings_u": [
+    0.014,
+    0.045,
+    0.085,
+    0.125,
+    0.16,
+    0.188,
+    0.205
+   ],
+   "nring": 8,
+   "inflate": 1.06,
+   "cap_front": {
+    "a": 2,
+    "b": 2,
+    "dome": 0.006
+   },
+   "cap_back": {
+    "a": 2,
+    "b": 2,
+    "dome": 0.012
+   }
+  },
+  "subdiv": 2,
+  "project_iters": 10,
+  "relax_iters": 10,
+  "relax_lambda": 0.45
+ },
+ "eye": {
+  "_doc": "Ojo izquierdo en marco canonico de cabeza; el centro se hunde 'depth' bajo la superficie a lo largo de la normal.",
+  "u": 0.148,
+  "z": 0.036,
+  "radius": 0.0085,
+  "depth": 0.0055,
+  "socket_gap": 0.0006,
+  "socket_k": 0.0022,
+  "socket_scale": [
+   1.0,
+   1.15,
+   0.92
+  ],
+  "cube_cuts": 3
+ },
+ "ear": {
+  "_doc": "Oreja izquierda. Base sobre la superficie de la cabeza (rayo desde la linea media en (u, z0) con angulo 'ray_deg' desde la vertical). dir_world: eje de la oreja (afuera, atras, arriba). back_world: hacia donde mira el dorso convexo. Perfiles a lo largo de t (fraccion de 'length').",
+  "u": 0.203,
+  "z0": 0.03,
+  "ray_deg": 42.0,
+  "sink": 0.006,
+  "length": 0.072,
+  "dir_world": [
+   0.45,
+   0.35,
+   1.0
+  ],
+  "back_world": [
+   -0.35,
+   1.0,
+   0.0
+  ],
+  "t": [
+   -0.1,
+   0.0,
+   0.25,
+   0.5,
+   0.72,
+   0.88,
+   0.98
+  ],
+  "half_width": [
+   0.02,
+   0.023,
+   0.025,
+   0.0235,
+   0.019,
+   0.0125,
+   0.005
+  ],
+  "back_bulge": [
+   0.0075,
+   0.007,
+   0.0055,
+   0.0044,
+   0.0034,
+   0.0025,
+   0.0016
+  ],
+  "cup": [
+   0.0032,
+   0.0048,
+   0.0052,
+   0.0044,
+   0.0032,
+   0.0021,
+   0.0011
+  ],
+  "front_thick": 0.0012,
+  "bend": 0.006,
+  "nring": 12,
+  "subdiv": 1
+ },
+ "canine": {
+  "_doc": "Canino superior izquierdo en marco canonico de la cabeza. Raiz dentro del labio; dir_can apunta hacia abajo (ligeramente adelante para compensar la inclinacion de la cabeza y quedar casi vertical en el mundo).",
+  "u": 0.056,
+  "z": -0.01,
+  "inset": 0.0045,
+  "dir_can": [
+   0.1,
+   -0.18,
+   -1.0
+  ],
+  "length": 0.021,
+  "t": [
+   0.0,
+   0.35,
+   0.6,
+   0.8,
+   0.93,
+   1.0
+  ],
+  "radius": [
+   0.0042,
+   0.0041,
+   0.0036,
+   0.0027,
+   0.0016,
+   0.0007
+  ],
+  "flatten": 0.8,
+  "nring": 8
+ },
+ "vertex_groups": {
+  "_doc": "Reglas de pesos (0..1) para el pelaje de la siguiente etapa.",
+  "fur_mane": {
+   "objects": [
+    "Pecari_Body",
+    "Pecari_Head"
+   ],
+   "rule": "dorsal_band",
+   "y_range": [
+    -0.355,
+    0.35
+   ],
+   "ramp": 0.03,
+   "half_width": [
+    [
+     -0.355,
+     0.02
+    ],
+    [
+     -0.3,
+     0.032
+    ],
+    [
+     -0.19,
+     0.045
+    ],
+    [
+     0.1,
+     0.04
+    ],
+    [
+     0.3,
+     0.028
+    ],
+    [
+     0.35,
+     0.018
+    ]
+   ],
+   "edge": 0.014,
+   "nz_min": 0.25
+  },
+  "fur_collar": {
+   "objects": [
+    "Pecari_Body"
+   ],
+   "rule": "plane_band",
+   "p0": [
+    -0.212,
+    0.42
+   ],
+   "p1": [
+    -0.3,
+    0.23
+   ],
+   "half_width": 0.02,
+   "edge": 0.012
+  },
+  "fur_belly": {
+   "objects": [
+    "Pecari_Body"
+   ],
+   "rule": "ventral",
+   "y_range": [
+    -0.205,
+    0.17
+   ],
+   "ramp": 0.03,
+   "nz_max": -0.35,
+   "edge": 0.25
+  },
+  "fur_legs": {
+   "objects": [
+    "Pecari_Body"
+   ],
+   "rule": "legs"
+  },
+  "bare_hooves": {
+   "objects": [
+    "Pecari_Body"
+   ],
+   "rule": "hooves",
+   "edge": 0.004
+  },
+  "fur_face": {
+   "objects": [
+    "Pecari_Head",
+    "Pecari_LowerJaw",
+    "Pecari_EarL",
+    "Pecari_EarR"
+   ],
+   "rule": "face"
+  },
+  "bare_snout": {
+   "objects": [
+    "Pecari_Head"
+   ],
+   "rule": "disc",
+   "u_full": 0.0035,
+   "u_zero": 0.01
+  }
+ },
+ "render": {
+  "resolution": 1024,
+  "samples": 96,
+  "clay_color": [
+   0.42,
+   0.42,
+   0.42
+  ],
+  "eye_color": [
+   0.06,
+   0.06,
+   0.06
+  ],
+  "tooth_color": [
+   0.8,
+   0.78,
+   0.72
+  ],
+  "background": [
+   0.55,
+   0.55,
+   0.55
+  ],
+  "ground_color": [
+   0.38,
+   0.38,
+   0.38
+  ],
+  "ortho_side": 1.05,
+  "ortho_front": 0.62,
+  "ortho_top": 1.05
+ }
+}
