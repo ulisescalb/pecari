@@ -39,6 +39,8 @@ OUT = os.path.join(ROOT, "fit")
 H_GRID = 0.006
 SCALE = 0.25
 W_SIDE, W_FRONT = 0.6, 0.4
+UPPER_ONLY = True      # etapa 2b: solo tronco y cabeza (z > 0.22 m); las patas siguen la anatomia
+SIDE_REF = "real_side_walking"   # etapa 2b: la lateral de referencia es la FOTO REAL
 EAR_FACTOR = 0.9125     # oreja medida en la malla / parametro length (CC nivel 1), medido en v06
 FRONT_JOINTS = ["scapula", "shoulder", "elbow", "olecranon", "carpus", "fetlock_f", "coronet_f",
                 "hoof_back_f", "toe_f", "heel_f", "sole_f"]
@@ -65,6 +67,8 @@ def param_space(P):
            ("ear.length", "add", -0.008, 0.006), ("ear.dx", "add", -0.15, 0.15), ("ear.dy", "add", -0.12, 0.15),
            ("ear.u", "add", -0.015, 0.012),
            ("front.dy", "add", -0.03, 0.03), ("hind.dy", "add", -0.02, 0.02)]
+    if UPPER_ONLY:     # las patas no se ajustan a una foto al paso
+        sp = [s for s in sp if s[0] not in ("front.dy", "hind.dy")]
     return sp
 
 
@@ -121,11 +125,11 @@ def apply(P0, sp, x):
     A["u"] = A["u"] * su + v["ear.u"]
     S = P["skeleton"]
     for j in FRONT_JOINTS:
-        S[j][1] += v["front.dy"]
+        S[j][1] += v.get("front.dy", 0.0)
     for j in HIND_JOINTS:
-        S[j][1] += v["hind.dy"]
+        S[j][1] += v.get("hind.dy", 0.0)
     for key, j in (("front_leg_y", "front.dy"), ("hind_leg_y", "hind.dy")):
-        P["landmarks"][key] += v[j]
+        P["landmarks"][key] += v.get(j, 0.0)
     return P
 
 
@@ -233,7 +237,7 @@ _SP = None
 def _init(P0, sp):
     global _REFS, _P0, _SP
     _P0, _SP = P0, sp
-    _REFS = {v: SIL.Reference(v, SCALE) for v in SIL.VIEWS}
+    _REFS = {v: SIL.Reference(v, SCALE) for v in (SIDE_REF, "front")}
 
 
 def evaluate(x):
@@ -243,15 +247,25 @@ def evaluate(x):
         m = AnatomyModel(P)
         lo, hi = m.bbox()
         occ_skin, axes = SIL.occupancy_grid(m.skin, lo, hi, H_GRID)
-        occ = SIL.add_fur(occ_skin, axes, m.fur_t, H_GRID)
-        proj = SIL.project_grid(occ, axes)
-        al = SIL.Alignment(_REFS, m.nose_y(), float(P["landmarks"]["tail_base"][1]))
+        occs = {1.0: SIL.add_fur(occ_skin, axes, m.fur_t, H_GRID)}
+        hm = float(axes[2][np.nonzero(occs[1.0].any(axis=(0, 1)))[0].max()])
+        nose, tail = m.nose_y(), float(P["landmarks"]["tail_base"][1])
         iou = {}
         for view, ref in _REFS.items():
-            iou[view] = SIL.iou(SIL.grid_silhouette(proj, al, ref, polys=m.ears_furred()), ref.mask)
+            fs = ref.fur_scale
+            if fs not in occs:
+                occs[fs] = SIL.add_fur(occ_skin, axes, lambda Q: m.fur_t(Q) * fs, H_GRID)
+            proj = SIL.project_grid(occs[fs], axes)
+            al = SIL.Alignment(ref, nose, tail, hm)
+            sil = SIL.grid_silhouette(proj, al, ref, polys=m.ears_furred())
+            if UPPER_ONLY:
+                cut = al.upper_cut()
+                iou[view] = SIL.iou(sil[:cut], ref.mask[:cut])
+            else:
+                iou[view] = SIL.iou(sil, ref.mask)
         M = sdf_measures(P, m, occ_skin, axes, H_GRID)
         pen, det = penalty(P, M)
-        score = W_SIDE * iou["side"] + W_FRONT * iou["front"]
+        score = W_SIDE * iou[SIDE_REF] + W_FRONT * iou["front"]
         return {"f": -score + pen, "score": score, "iou": iou, "pen": pen, "viol": det,
                 "M": M, "t": time.time() - t}
     except Exception as e:   # parametros degenerados
@@ -300,13 +314,13 @@ def main():
             for x, r in zip(X, R):
                 ne += 1
                 log.write("%d,%d,%.5f,%.5f,%.5f,%.5f,%.4f,\"%s\"\n" % (
-                    ne, es.countiter, r["f"], r["score"], r["iou"].get("side", 0), r["iou"].get("front", 0),
+                    ne, es.countiter, r["f"], r["score"], r["iou"].get(SIDE_REF, 0), r["iou"].get("front", 0),
                     r["pen"], r["viol"]))
                 if r["f"] < best[0]:
                     best = (r["f"], x, r)
             log.flush()
             print("gen %3d evals %4d  mejor f %.4f score %.4f (lat %.4f fr %.4f) pen %.3f  %.0fs" % (
-                es.countiter, ne, best[0], best[2]["score"], best[2]["iou"].get("side", 0),
+                es.countiter, ne, best[0], best[2]["score"], best[2]["iou"].get(SIDE_REF, 0),
                 best[2]["iou"].get("front", 0), best[2]["pen"], time.time() - t0), flush=True)
     log.close()
     f, xb, rb = best
@@ -319,7 +333,7 @@ def main():
     json.dump(summary, open(os.path.join(OUT, "fit_summary%s.json" % a.tag), "w"), indent=1)
     # superposiciones del mejor (resolucion de informe)
     res, _, _ = SIL.evaluate_model(Pb, h=0.004, scale=0.5, out_dir=OUT)
-    print("mejor (rejilla 4 mm): %s" % {k: round(v, 4) for k, v in res.items() if k in ("side", "front")})
+    print("mejor (rejilla 4 mm): %s" % {k: round(v, 4) for k, v in res.items() if k.endswith("upper_z022")})
     if a.write:
         jsonfmt.dump(P0, os.path.join(OUT, "params_before_fit%s.json" % a.tag))
         jsonfmt.dump(Pb, a.params)

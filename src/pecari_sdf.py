@@ -193,17 +193,32 @@ def absx(P):
 # Campos de cada pieza
 # ----------------------------------------------------------------------------
 class BodyField:
-    def __init__(self, B, legs):
+    def __init__(self, B, legs, fuse=None):
         self.sweep = Sweep(B["stations"], B["cap_front"], B["cap_rear"])
         self.ell = B.get("ellipsoids", [])
+        self.cones = B.get("cones", [])
         self.legs = legs
         self.gk = B.get("ground_k", 0.0025)
+        self.fuse = fuse
+
+    def fused_head(self, P):
+        """Parte trasera de cabeza y mandibula (u >= corte), metida 'inset' hacia dentro: el
+        cuello del cuerpo la envuelve de forma tangente y no queda costura visible."""
+        F = self.fuse
+        Q = to_can(P, F["R"], F["T"])
+        dh = smax(F["head"](Q) + F["inset"], F["u_head"] - Q[:, 1], 0.004)
+        dj = smax(F["jaw"](Q) + F["inset"], F["u_jaw"] - Q[:, 1], 0.004)
+        return smin(dh, dj, 0.01)
 
     def torso(self, P):
         Q = absx(P)
         d = self.sweep.sdf(Q)
         for e in self.ell:
             d = smin(d, sd_ellipsoid(Q, e["c"], e["r"]), e["k"])
+        for c in self.cones:
+            d = smin(d, sd_round_cone(Q, c["a"], c["b"], c["ra"], c["rb"]), c["k"])
+        if self.fuse is not None:
+            d = smin(d, self.fused_head(P), self.fuse["k"])
         return d
 
     @staticmethod
@@ -502,6 +517,18 @@ def auto_body_rings(P):
     return [round(float(r), 4) for r in rings]
 
 
+def make_body_field(P, legs=None):
+    """Campo del cuerpo con patas y, si params.neck_fusion existe, la nuca fundida."""
+    legs = legs if legs is not None else resolve_legs(P)
+    fuse = None
+    NF = P.get("neck_fusion")
+    if NF and NF.get("enabled", True):
+        R, T = head_transform(P["head"])
+        fuse = {"head": HeadField(P["head"]), "jaw": JawField(P["jaw"]), "R": R, "T": T,
+                "u_head": NF["u_cut_head"], "u_jaw": NF["u_cut_jaw"], "inset": NF["inset"], "k": NF["k"]}
+    return BodyField(P["body"], legs, fuse)
+
+
 def resolve_legs(P):
     """Convierte params.legs (por articulaciones) al formato numerico de BodyField:
     segments [ax,ay,az,bx,by,bz,ra,rb,k], ellipsoids [cx,cy,cz,rx,ry,rz,k],
@@ -578,7 +605,7 @@ class AnatomyModel:
     def __init__(self, P):
         self.P = P
         self.legs = resolve_legs(P)
-        self.body = BodyField(P["body"], self.legs)
+        self.body = make_body_field(P, self.legs)
         H = P["head"]
         self.R, self.T = head_transform(H)
         self.head = HeadField(H)

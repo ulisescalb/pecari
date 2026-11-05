@@ -403,6 +403,7 @@ def render_all(objs, out_dir, R, args=None, info=None):
         print("[render] aviso hoja de contacto:", e)
     if scene.render.engine == "CYCLES":
         scene.cycles.samples = min(samples, 48)
+    render_compare_views(objs, out_dir, R)
     render_vertex_groups(objs, out_dir, R)
     render_wire_head(objs, out_dir, info)
     return engine
@@ -412,6 +413,66 @@ GROUP_COLORS = {"fur_face": (0.90, 0.60, 0.50), "fur_legs": (1.0, 0.80, 0.10),
                 "fur_belly": (0.10, 0.30, 1.0), "fur_mane": (1.0, 0.10, 0.10),
                 "fur_collar": (0.10, 1.0, 0.10), "bare_hooves": (0.60, 0.10, 0.90),
                 "bare_snout": (0.10, 0.90, 0.90)}
+
+
+COMPARE_VIEWS = [
+    # nombre, tipo, direccion camara->objetivo (desde el objetivo), lente
+    ("lateral_ia", "ortho_x_neg", None, None),
+    ("lateral_real", "ortho_x_pos", None, None),
+    ("frontal_ia", "ortho_front", None, None),
+    ("tres_cuartos_ia", "persp", (-0.62, -0.72, 0.30), 50.0),
+    ("cabeza_real", "head_x_pos", None, None),
+]
+
+
+def render_compare_views(objs, out_dir, R):
+    """Renders con fondo transparente para la hoja comparativa (foto | render): mismo lado y
+    orientacion que cada foto de referencia. compare_sheet.py los recorta y compone."""
+    scene = bpy.context.scene
+    gnd = bpy.data.objects.get("RV_ground")
+    if gnd:
+        gnd.hide_render = True
+    scene.render.film_transparent = True
+    scene.render.image_settings.color_mode = "RGBA"
+    V = np.vstack([np.array([v.co[:] for v in o.data.vertices]) for o in objs.values()])
+    lo, hi = V.min(0), V.max(0)
+    ctr = 0.5 * (lo + hi)
+    ext = hi - lo
+    HV = np.vstack([np.array([v.co[:] for v in o.data.vertices]) for n, o in objs.items()
+                    if any(k in n for k in ("Head", "Jaw", "Ear", "Eye", "Canine"))])
+    hlo, hhi = HV.min(0), HV.max(0)
+    hc = 0.5 * (hlo + hhi)
+    D = 5.0
+    for name, kind, d, lens in COMPARE_VIEWS:
+        if kind == "ortho_x_neg":
+            camera("cmp", (-D, ctr[1], ctr[2]), rot=(math.radians(90), 0, math.radians(-90)),
+                   ortho=max(ext[1], ext[2]) / 0.9)
+            three_point((0, ctr[1], ctr[2]), (1, 0, 0), 3.0)
+        elif kind == "ortho_x_pos":
+            camera("cmp", (D, ctr[1], ctr[2]), rot=(math.radians(90), 0, math.radians(90)),
+                   ortho=max(ext[1], ext[2]) / 0.9)
+            three_point((0, ctr[1], ctr[2]), (-1, 0, 0), 3.0)
+        elif kind == "ortho_front":
+            camera("cmp", (0, ctr[1] - D, ctr[2]), rot=(math.radians(90), 0, 0),
+                   ortho=max(2 * max(abs(lo[0]), abs(hi[0])), ext[2]) / 0.9)
+            three_point((0, ctr[1], ctr[2]), (0, 1, 0), 3.0)
+        elif kind == "head_x_pos":
+            he = hhi - hlo
+            camera("cmp", (D, hc[1], hc[2]), rot=(math.radians(90), 0, math.radians(90)),
+                   ortho=max(he[1], he[2]) / 0.85)
+            three_point((0, hc[1], hc[2]), (-1, 0, 0), 2.0)
+        else:
+            dv = Vector(d).normalized()
+            t = Vector((0, ctr[1], ctr[2]))
+            camera("cmp", t + dv * fit_distance(V, t, dv, lens, 0.9), target=t, lens=lens)
+            three_point(t, -dv, 3.0)
+        scene.render.filepath = os.path.join(out_dir, "cmp_%s.png" % name)
+        bpy.ops.render.render(write_still=True)
+        print("[render] cmp_%s" % name, flush=True)
+    scene.render.film_transparent = False
+    scene.render.image_settings.color_mode = "RGB"
+    if gnd:
+        gnd.hide_render = False
 
 
 def render_vertex_groups(objs, out_dir, R):

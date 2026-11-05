@@ -64,6 +64,27 @@ def extract(path, ground_y=None, thr=212):
     return img, m * 255, ground_y
 
 
+def extract_rect(path, rect, iters=6):
+    """Foto con fondo natural: GrabCut inicializado con un rectangulo + mayor componente."""
+    img = cv2.imread(path)
+    gc = np.zeros(img.shape[:2], np.uint8)
+    bgd = np.zeros((1, 65), np.float64)
+    fgd = np.zeros((1, 65), np.float64)
+    cv2.grabCut(img, gc, tuple(rect), bgd, fgd, iters, cv2.GC_INIT_WITH_RECT)
+    m = ((gc == cv2.GC_FGD) | (gc == cv2.GC_PR_FGD)).astype(np.uint8)
+    m = cv2.morphologyEx(m, cv2.MORPH_OPEN, np.ones((5, 5), np.uint8))
+    n, lab, stats, _ = cv2.connectedComponentsWithStats(m, 8)
+    k = 1 + int(np.argmax(stats[1:, cv2.CC_STAT_AREA]))
+    m = (lab == k).astype(np.uint8)
+    inv = (1 - m).astype(np.uint8)
+    n, lab, stats, _ = cv2.connectedComponentsWithStats(inv, 4)
+    for i in range(1, n):
+        x, y, ww, hh, area = stats[i]
+        if area < 3000 and x > 0 and y > 0:
+            m[lab == i] = 1
+    return img, m * 255
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     meta_path = os.path.join(REF, "ref_landmarks.json")
@@ -85,6 +106,21 @@ def main():
                 "area_px": int((mask > 0).sum())}
         meta.setdefault(view, {}).update(info)
         print(view, info)
+    # foto real lateral (fondo natural): GrabCut con rectangulo
+    for view, rect in (("real_side_walking", (62, 165, 860, 495)),):
+        src = os.path.join(REF, view + ".jpg")
+        if not os.path.exists(src):
+            continue
+        img, mask = extract_rect(src, rect)
+        cv2.imwrite(os.path.join(OUT, view + ".png"), mask)
+        over = img.copy()
+        edge = cv2.morphologyEx(mask, cv2.MORPH_GRADIENT, np.ones((3, 3), np.uint8)) > 0
+        over[edge] = (0, 0, 255)
+        over[mask == 0] = (over[mask == 0] * 0.4 + np.array([255, 200, 120]) * 0.6).astype(np.uint8)
+        cv2.imwrite(os.path.join(OUT, view + "_check.jpg"), over)
+        ys, xs = np.nonzero(mask)
+        meta.setdefault(view, {}).update({"bbox": [int(xs.min()), int(ys.min()), int(xs.max()), int(ys.max())]})
+        print(view, meta[view]["bbox"])
     json.dump(meta, open(meta_path, "w"), indent=1)
 
 

@@ -34,7 +34,9 @@
    578
   ],
   "use_for_iou": true,
-  "source": "foto (posiblemente generada por IA): coherente con front y three_quarter"
+  "source": "foto (posiblemente generada por IA): coherente con front y three_quarter",
+  "faces": "right",
+  "fur_scale": 1.0
  },
  "front": {
   "ground_y_auto": 1075,
@@ -47,7 +49,8 @@
   "area_px": 317934,
   "midline_x": 1022,
   "ground_y": 1072,
-  "use_for_iou": true
+  "use_for_iou": true,
+  "fur_scale": 1.0
  },
  "three_quarter": {
   "ground_y_auto": 1075,
@@ -69,7 +72,7 @@
  "real_side_walking": {
   "file": "real_side_walking.jpg",
   "origin": "foto real",
-  "faces": "izquierda",
+  "faces": "left",
   "pose": "al paso, cabeza casi horizontal, crin erizada",
   "nose_disc": [
    95,
@@ -115,8 +118,24 @@
    872,
    520
   ],
-  "ground_y": 628,
-  "use_for_iou": false
+  "ground_y": 630,
+  "use_for_iou": true,
+  "bbox": [
+   91,
+   202,
+   899,
+   613
+  ],
+  "nose_px": [
+   90,
+   430
+  ],
+  "tail_base_px": [
+   850,
+   305
+  ],
+  "fur_scale": 0.45,
+  "note": "foto real; la mascara sigue la capa densa (sin las puntas de las cerdas erizadas) -> pelaje de comparacion al 45 %. Patas al paso: solo se usa la IoU por encima de 0.22 m."
  },
  "real_side_walking_head_low": {
   "file": "real_side_walking_head_low.jpg",

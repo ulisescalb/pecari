@@ -35,7 +35,8 @@ from pecari_sdf import *  # noqa: F401,F403  (modelo numerico compartido)
 from pecari_sdf import (smoothstep, normalize, num_grad, smin, smax, Sweep, BodyField, HeadField,
                         JawField, project, project_normal, relax, field_laplacian, surface_along,
                         field_normal, MeshBuilder, mirror_k, head_transform, to_world, to_can,
-                        resolve_legs, skel_point, ear_rings, ear_root_can, AnatomyModel)
+                        resolve_legs, skel_point, ear_rings, ear_root_can, AnatomyModel,
+                        make_body_field)
 
 T0 = time.time()
 
@@ -240,7 +241,7 @@ def untangle(obj, field, mid, rounds=8):
 def build_body(P, coll):
     B = P["body"]
     legs = resolve_legs(P)
-    field = BodyField(B, legs)
+    field = make_body_field(P, legs)
     C = B["cage"]
     n = C["nring"]
     skip = {}
@@ -679,7 +680,10 @@ def measure(P, objs, info, R, T, off):
     P_heel = hl[np.argmax(hl[:, 1])]
     toe = Vb[(Vb[:, 0] > 0.02 * S) & (Vb[:, 1] > 0) & (Vb[:, 2] < 0.012 * S)]
     P_toe = toe[np.argmin(toe[:, 1])]
-    M["hind_foot"] = float(np.linalg.norm(P_heel - P_toe))
+    # pie estirado (como en mastozoologia): talon -> centro del menudillo -> punta de la pezuna
+    F_fet = lmw(P["skeleton"]["fetlock_h"])
+    M["hind_foot"] = float(np.linalg.norm(P_heel - F_fet) + np.linalg.norm(F_fet - P_toe))
+    M["hind_foot_chord"] = float(np.linalg.norm(P_heel - P_toe))
     # ojo
     Vey = get_V(objs["Pecari_EyeL"])
     M["eye_diameter"] = float(Vey[:, 0].max() - Vey[:, 0].min())
@@ -835,10 +839,13 @@ def build_lods(P, objs, out_dir, version, coll):
         np.savez_compressed(tmp, **data)
         o0, lm = SIL.load_mesh_arrays(arr0)
         o1, _ = SIL.load_mesh_arrays(tmp)
-        refs = {v: SIL.Reference(v, 0.5) for v in SIL.VIEWS}
-        al = SIL.Alignment(refs, float(o0["Pecari_Head"]["V"][:, 1].min()), float(lm["tail_base"][1]))
-        sim = {v: SIL.iou(SIL.mesh_silhouette(o1, al, refs[v], fur=False),
-                          SIL.mesh_silhouette(o0, al, refs[v], fur=False)) for v in SIL.VIEWS}
+        nose = float(o0["Pecari_Head"]["V"][:, 1].min())
+        hm = max(float(d["V"][:, 2].max()) for d in o0.values())
+        sim = {}
+        for v in ("real_side_walking", "front"):
+            ref = SIL.Reference(v, 0.5)
+            al = SIL.Alignment(ref, nose, float(lm["tail_base"][1]), hm)
+            sim[v] = SIL.iou(SIL.mesh_silhouette(o1, al, ref, fur=False), SIL.mesh_silhouette(o0, al, ref, fur=False))
         os.remove(tmp)
         res[lod] = {"tris": tris, "glb": os.path.relpath(path, ROOT),
                     "iou_vs_lod0": {k: round(v, 4) for k, v in sim.items()}}
@@ -960,9 +967,13 @@ def write_report(path_md, path_json, version, P, M, VAL, groups, timings, engine
         okg = all(c.get("ok") for c in glb_check_global.values())
         lines += ["", "GLB reimportado: **%s** (%s)." % ("identico" if okg else "DIFERENCIAS",
                   ", ".join("%s %s" % (k.replace("Pecari_", ""), "ok" if v.get("ok") else v) for k, v in glb_check_global.items()))]
-    if "iou_side" in M:
-        lines += ["", "IoU de silueta (piel + pelaje) contra las fotos: **lateral %.3f**, **frontal %.3f** "
-                  "(superposiciones iou_side.png / iou_front.png)." % (M["iou_side"], M["iou_front"])]
+    if "iou" in M:
+        I = M["iou"]
+        lines += ["", "IoU de silueta (piel + pelaje) **de tronco y cabeza (z > 0,22 m)**: lateral contra la FOTO REAL "
+                  "**%.3f**, frontal (imagen IA, escalada por altura) **%.3f**, lateral contra la imagen IA %.3f. "
+                  "Totales (incluyen patas al paso): %.3f / %.3f / %.3f. Superposiciones iou_*.png." % (
+                      I["real_side_walking_upper_z022"], I["front_upper_z022"], I["side_upper_z022"],
+                      I["real_side_walking"], I["front"], I["side"])]
     lines += ["", "Volumen union = %.5f m3 (suma de piezas %.5f m3; la diferencia es el solape cabeza/cuello/mandibula)."
               % (M["volume_union_m3"], M["volume_sum_m3"]), "",
               "## Validacion de malla", "",
@@ -1135,10 +1146,14 @@ def main():
         res = silhouette.evaluate_mesh(os.path.join(out_render, "mesh_arrays.npz"), out_render)
         with open(os.path.join(out_render, "iou.json"), "w") as fh:
             json.dump(res, fh, indent=1)
-        M["iou_side"] = res["side"]
-        M["iou_front"] = res["front"]
+        M["iou"] = {k: v for k, v in res.items() if k in ("side", "front", "real_side_walking")
+                    or k.endswith("_upper_z022")}
         timings["iou"] = time.time() - t
-        log("IoU lateral %.3f | frontal %.3f" % (res["side"], res["front"]))
+        log("IoU tronco+cabeza (z>0.22 m): lateral FOTO REAL %.3f | frontal IA %.3f | lateral IA %.3f"
+            % (res["real_side_walking_upper_z022"], res["front_upper_z022"], res["side_upper_z022"]))
+        if not args.no_render:
+            import compare_sheet
+            log("hoja comparativa:", compare_sheet.build(version))
     except ImportError as e:
         log("aviso: sin IoU de silueta (%s)" % e)
     with open(os.path.join(out_render, "points.json"), "w") as fh:
