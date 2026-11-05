@@ -331,3 +331,93 @@ para que se pueda juzgar.
 - Variante escalada: con `meta.global_scale = 1.15` y los `targets` escalados, la build pasa
   todos los criterios (HB 1,061 m, cruz 0,483 m, 34,5 kg). Es el punto de partida para
   *Tayassu pecari*.
+
+---
+
+# ETAPA 2 — corrección anatómica guiada por referencias (v06 en adelante)
+
+## Paso 0 — Entorno (etapa 2)
+
+- `python3.11 -m venv ~/.venvs/pecari` + `pip install -r requirements.txt` funcionó: **bpy 5.0.1**
+  (Blender 5.0.1 como módulo de Python), con Cycles CPU, **OIDN** (denoiser) y exportador glTF.
+  Es el entorno principal de esta etapa. El Blender 4.0.2 de apt sigue disponible como respaldo.
+- `build_pecari.py` se puede ejecutar de dos formas:
+  - `blender -b -P src/build_pecari.py -- --version vNN` (comando original, sin cambios);
+  - `python src/build_pecari.py --version vNN`, con el venv.
+- Todo el código numérico del SDF se movió a `src/pecari_sdf.py`, que no depende de bpy. Así la
+  silueta y el optimizador corren en Python puro, sin Blender. Comprobación: el build refactorizado
+  con bpy 5.0.1 reproduce las medidas de la v05 al milímetro.
+
+## Paso 1 — Referencias y métrica de silueta
+
+**Imágenes recibidas** (copiadas a `reference/`):
+
+| archivo | vista | uso |
+|---|---|---|
+| `ref_side.jpg` | lateral, mira a la derecha | **IoU** |
+| `ref_front.jpg` | frontal | **IoU** |
+| `ref_three_quarter.jpg` | 3/4 delantero derecho | solo visual (perspectiva desconocida) |
+| `ref_skeleton_side.jpg` | esqueleto lateral | **descartada para IoU**. Es una imagen generada por IA con errores claros: cola de ~10 vértebras (la real es vestigial), huesos duplicados en la pata trasera, pelvis y costillas irreales. Solo se usa como guía cualitativa del zigzag de las patas (fémur adelante-abajo, tibia atrás-abajo, metatarso casi vertical). |
+
+**Coherencia de las tres fotos**:
+- Muestran al mismo individuo con la misma iluminación y la misma escala (alto total 961 px de
+  perfil y 982 px de frente), cuatro patas, collar claro, espolones visibles en las patas traseras
+  y boca cerrada (los caninos no asoman, lo que no contradice nada).
+- Por esos detalles parecen fotos reales recortadas sobre blanco, no IA.
+- La proporción nariz–base de la cola / alto total (con pelo) es **1,50**, no 2,1–2,2.
+  - Esa cifra de 2,1–2,2 es la de HB/cruz **a nivel de piel**, que una foto con pelo no puede
+    medir.
+  - Sin crin (≈6–8 cm) queda en ≈1,7, dentro de lo que permite la bibliografía (HB 0,80–1,05 m;
+    cruz 0,30–0,61 m según la fuente → 1,3–3,5).
+- **Decisión**: conservar las tres fotos como referencia, con una advertencia: la cabeza de la foto
+  es grande respecto al cuerpo. La cuerda disco–base de la oreja es ≈39 % de la distancia
+  nariz–base de la cola, frente a ~30 % esperado en un adulto con cráneo de 211–237 mm. Puede ser
+  un subadulto. Por eso las medidas bibliográficas (`hb_length`, `withers_height`, `head_length`,
+  `ear_length`, `hind_foot`, masa) **no se cambian** y actúan como restricciones duras (±8 %).
+  La silueta guía la forma dentro de esa caja.
+
+**Máscaras** (`src/reference_masks.py` → `reference/masks/*.png`, control en `*_check.jpg`):
+- Umbral de "no blanco" → semilla de GrabCut (OpenCV) → mayor componente.
+- Se quita la sombra gris del suelo.
+- Se rellenan los huecos no blancos (la banda clara del collar) y se dejan abiertos los blancos
+  (el espacio entre patas).
+- Revisadas visualmente: contornos fieles, incluido el pelo de la crin.
+- Hitos anotados a mano en `reference/ref_landmarks.json`: nariz, base de la cola, suelo, ojo,
+  punta de la oreja, comisura y línea media frontal.
+
+**Pelaje en la comparación**:
+- La foto incluye pelo y la malla es piel. Para comparar se suma un grosor de pelaje por zona
+  (`params.fur`, a partir de los grupos de vértices): patas 0,5 cm (medido en la foto: la caña mide
+  3,1–3,5 cm con pelo frente a 2,4 cm de piel), flancos 2 cm, vientre 3,5 cm, crin 6 cm, cara
+  1 cm, coronilla 2,5 cm, orejas 0,3 cm, disco nasal y pezuñas 0.
+- El grosor **no** es un parámetro que se optimice; es una hipótesis fija y documentada.
+
+**`src/silhouette.py`**:
+- Dos fuentes de silueta, sin renderizar:
+  1. La malla exportada (`renders/vNN/mesh_arrays.npz`), desplazada por el pelo y rellenada
+     triángulo a triángulo.
+  2. La rejilla de ocupación del SDF proyectada por ejes. Es la que usará el optimizador.
+- Alineación:
+  - lateral: suelo + distancia horizontal nariz–base de la cola;
+  - frontal: suelo + línea media + misma altura en metros que la lateral ya alineada.
+- Salidas: `iou.json` y `iou_side.png` / `iou_front.png` (gris = coincide, rojo = sobra,
+  azul = falta).
+- Diagnóstico extra, `side_height_normalized`: IoU tras escalar la altura del modelo a la de la
+  foto. Separa "forma" de "proporción".
+
+**Línea base v05** (`renders/v05/iou_*.png`):
+
+| | lateral | frontal | lateral con altura normalizada |
+|---|---:|---:|---:|
+| piel + pelo | **0,523** | **0,609** | 0,777 |
+| solo piel | 0,402 | 0,467 | — |
+
+- Con la escala nariz–base de la cola de la v05 (0,00062 m/px), la foto mide **0,60 m** de alto
+  con pelo y la v05 **0,48 m**.
+- Aun normalizando la altura, la forma solo llega a 0,78. Fallan: cabeza demasiado baja y
+  larga, grupa cuadrada, pata trasera barrida hacia atrás, vientre sin flecos y patas delanteras
+  desplazadas hacia delante.
+- **Advertencia temprana**: con HB ≥ 0,828 m y cruz ≤ 0,454 m (±8 %), el alto con pelo del
+  modelo no puede pasar de ≈0,52–0,54 m, frente a ≈0,55–0,60 m que pide la foto a esa escala.
+  Llegar a IoU lateral ≥ 0,90 puede ser incompatible con las medidas bibliográficas. El
+  optimizador dirá cuánto se puede acercar dentro de la caja permitida.

@@ -1,0 +1,69 @@
+{
+ "side": {
+  "ground_y_auto": 1068,
+  "bbox": [
+   275,
+   105,
+   1755,
+   1068
+  ],
+  "area_px": 817546,
+  "nose_px": [
+   1755,
+   560
+  ],
+  "tail_base_px": [
+   318,
+   415
+  ],
+  "ground_y": 1066,
+  "eye_px": [
+   1525,
+   378
+  ],
+  "ear_tip_px": [
+   1345,
+   165
+  ],
+  "mouth_corner_px": [
+   1588,
+   556
+  ],
+  "disc_center_px": [
+   1745,
+   578
+  ],
+  "use_for_iou": true,
+  "source": "foto (posiblemente generada por IA): coherente con front y three_quarter"
+ },
+ "front": {
+  "ground_y_auto": 1075,
+  "bbox": [
+   791,
+   93,
+   1254,
+   1075
+  ],
+  "area_px": 317934,
+  "midline_x": 1022,
+  "ground_y": 1072,
+  "use_for_iou": true
+ },
+ "three_quarter": {
+  "ground_y_auto": 1075,
+  "bbox": [
+   421,
+   68,
+   1635,
+   1075
+  ],
+  "area_px": 688675,
+  "use_for_iou": false,
+  "note": "perspectiva desconocida; solo comparacion visual"
+ },
+ "_doc": "Hitos anotados a mano sobre las fotos (pixeles, origen arriba-izquierda). side: el animal mira a la derecha. Escala: se alinea la distancia horizontal nariz-base de cola del modelo con nose_px-tail_base_px y el suelo con ground_y. front: misma altura total en metros que la lateral alineada.",
+ "skeleton_side": {
+  "use_for_iou": false,
+  "note": "generada por IA con errores: cola de ~10 vertebras (la real es vestigial), huesos duplicados en la pata trasera, pelvis y costillas irreales. Solo guia cualitativa del zigzag de las patas: femur adelante-abajo, tibia atras-abajo, metatarso casi vertical."
+ }
+}

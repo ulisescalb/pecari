@@ -1,0 +1,6 @@
+bpy==5.0.1
+numpy
+scipy
+scikit-image
+opencv-python-headless
+cma

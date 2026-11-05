@@ -268,6 +268,17 @@
     "bare_snout": {"objects": ["Pecari_Head"], "rule": "disc", "u_full": 0.0035, "u_zero": 0.010}
   },
 
+  "fur": {
+    "_doc": "Grosor aparente del pelaje (m) sobre la piel. Solo se usa para comparar siluetas con fotos (la malla es piel); sirve de punto de partida para la etapa de pelaje. Estimado en la foto lateral: patas ~0.5 cm por lado, flancos ~2 cm, crin semierguida ~6 cm, flecos del vientre ~3.5 cm.",
+    "body": 0.020,
+    "mane": 0.060,
+    "belly": 0.035,
+    "legs": 0.005,
+    "face": 0.010,
+    "crown": 0.025,
+    "ears": 0.003
+  },
+
   "render": {
     "resolution": 1024,
     "samples": 96,
